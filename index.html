@@ -1409,6 +1409,79 @@ function togglePass(id, el){
   else { inp.type='password'; el.textContent='👁️'; }
 }
 
+function addProductInCategory(cat){
+  const prods = getProducts();
+  const cats = [...new Set(prods.map(x=>x.category))];
+  openModalContent(`
+    <h3>➕ Nuevo Producto en <span style="color:var(--g1)">${cat}</span></h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-group"><label>Emoji</label><input id="pEmoji" value="📦" maxlength="4"></div>
+      <div class="form-group"><label>Categoría</label><input id="pCat" list="catListInv" value="${cat}"><datalist id="catListInv">${cats.map(c=>'<option value="'+c+'">').join('')}</datalist></div>
+    </div>
+    <div class="form-group"><label>Nombre del producto</label><input id="pName" placeholder="Ej: Galletas" autofocus></div>
+    <div style="background:#F0F9FF;border-radius:12px;padding:12px;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:800;color:#1565C0;margin-bottom:10px">💰 Precios</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group" style="margin:0"><label>🏭 PVP Proveedor ($)</label><input id="pCost" type="number" step="0.01" min="0" value="0" oninput="calcGanancia2()" placeholder="0.00"></div>
+        <div class="form-group" style="margin:0"><label>🏷️ PVP Público ($)</label><input id="pPrice" type="number" step="0.05" min="0" value="0" oninput="calcGanancia2()" placeholder="0.00"></div>
+      </div>
+      <div style="margin-top:10px;padding:10px;background:white;border-radius:10px;display:flex;justify-content:space-between;font-size:13px">
+        <span style="color:#888">Ganancia por unidad:</span>
+        <span id="gananciaVal2" style="font-weight:800;font-family:'DM Mono',monospace;color:var(--g1)">$0.00 (0%)</span>
+      </div>
+    </div>
+    <div class="form-group"><label>Código de barras</label><input id="pBarcode" placeholder="Escanea o escribe"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-group"><label>Stock inicial</label><input id="pStock" type="number" value="10"></div>
+      <div class="form-group"><label>⚠️ Alertar cuando queden</label><input id="pLow" type="number" value="5"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="saveProductAndRefreshInv()">💾 Guardar</button>
+    </div>
+  `);
+  setTimeout(()=>calcGanancia2(), 100);
+}
+
+function calcGanancia2(){
+  const cost=parseFloat(document.getElementById('pCost')?.value)||0;
+  const sale=parseFloat(document.getElementById('pPrice')?.value)||0;
+  const el=document.getElementById('gananciaVal2');
+  if(!el) return;
+  if(cost>0&&sale>0){
+    const gain=sale-cost;
+    const pct=(gain/cost*100).toFixed(1);
+    el.textContent='$'+gain.toFixed(2)+' ('+pct+'%)';
+    el.style.color=gain>0?'var(--g1)':'var(--danger)';
+  } else {
+    el.textContent='$0.00 (0%)';
+    el.style.color='#888';
+  }
+}
+
+function saveProductAndRefreshInv(){
+  const name=document.getElementById('pName').value.trim();
+  const price=parseFloat(document.getElementById('pPrice').value)||0;
+  const costPrice=parseFloat(document.getElementById('pCost')?.value)||0;
+  const emoji=document.getElementById('pEmoji').value.trim()||'📦';
+  const category=document.getElementById('pCat').value.trim()||'Varios';
+  const barcode=document.getElementById('pBarcode').value.trim();
+  const stock=parseInt(document.getElementById('pStock').value)||0;
+  const lowStockAt=parseInt(document.getElementById('pLow').value)||5;
+  if(!name){showToast('⚠️ Ingresa el nombre');return;}
+  const prods=getProducts();
+  const newProd={id:Date.now(),name,price,costPrice,emoji,category,barcode,stock,lowStockAt};
+  prods.push(newProd);
+  DB.set('products',prods);
+  fbSave('products', newProd.id, newProd);
+  closeModal();
+  renderInventario();
+  renderCategories();
+  renderProducts();
+  checkStockAlerts();
+  showToast('✅ '+name+' agregado en '+category);
+}
+
 function renderAll(){renderCategories();renderProducts();updateCartUI();}
 
 // ============================================================
