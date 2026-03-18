@@ -301,16 +301,25 @@ html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);colo
       <div class="prod-grid" id="prodGrid"></div>
     </div>
     <div id="tab-historial" style="display:none">
-      <div class="date-filter">
-        <input type="date" id="dateFilter" onchange="renderHistorial()">
-        <button onclick="setToday()">Hoy</button>
+      <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
+        <input type="date" id="histFechaInicio" onchange="renderHistorial()" style="flex:1;padding:8px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;outline:none;background:white">
+        <span style="font-size:12px;color:var(--muted);font-weight:700">al</span>
+        <input type="date" id="histFechaFin" onchange="renderHistorial()" style="flex:1;padding:8px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;outline:none;background:white">
+        <button onclick="setHistorialHoy()" style="background:var(--g1);color:white;border:none;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:700;cursor:pointer">Hoy</button>
       </div>
       <div id="historialSummary"></div>
       <div id="historialList"></div>
     </div>
     <div id="tab-resumen" style="display:none">
+      <!-- Filtro fechas -->
+      <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
+        <input type="date" id="resumenFechaInicio" onchange="renderResumen()" style="flex:1;padding:8px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;outline:none;background:white">
+        <span style="font-size:12px;color:var(--muted);font-weight:700">al</span>
+        <input type="date" id="resumenFechaFin" onchange="renderResumen()" style="flex:1;padding:8px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;outline:none;background:white">
+        <button onclick="setResumenHoy()" style="background:var(--g1);color:white;border:none;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:700;cursor:pointer">Hoy</button>
+      </div>
       <div class="kpi-grid" id="kpiGrid"></div>
-      <div class="chart-bar-wrap"><div class="chart-title">🏆 Más vendidos hoy</div><div id="topChart"></div></div>
+      <div class="chart-bar-wrap"><div class="chart-title" id="resumenChartTitle">🏆 Más vendidos</div><div id="topChart"></div></div>
       <div class="stock-section" id="stockSection" style="display:none"><div class="chart-title">⚠️ Stock bajo — ¡Pedir pronto!</div><div id="stockList"></div></div>
       <button class="btn-whatsapp" onclick="shareWhatsApp()">📲 Enviar resumen por WhatsApp</button>
     </div>
@@ -404,7 +413,9 @@ html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);colo
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
           <h2 style="font-size:15px;font-weight:800">🚫 Ventas Anuladas</h2>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <input type="date" id="anuladasFechaFilter" onchange="renderReportes()" style="padding:8px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;outline:none;background:white">
+            <input type="date" id="anuladasFechaInicio" onchange="renderReportes()" style="flex:1;padding:8px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;outline:none;background:white">
+            <span style="font-size:12px;color:var(--muted);font-weight:700">al</span>
+            <input type="date" id="anuladasFechaFin" onchange="renderReportes()" style="flex:1;padding:8px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;outline:none;background:white">
             <button onclick="setHoyAnuladas()" style="background:var(--g1);color:white;border:none;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:700;cursor:pointer">Hoy</button>
           </div>
         </div>
@@ -502,6 +513,35 @@ html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);colo
     <div class="change-box">
       <div class="cb-label">Devolver al cliente</div>
       <div class="cb-val" id="changeAmt">$0.00</div>
+    </div>
+    <!-- Checkbox afiliar cliente -->
+    <div style="background:#F3E5F5;border-radius:10px;padding:10px 12px;margin:10px 0">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:0">
+        <input type="checkbox" id="chkAfiliarCambio" onchange="toggleAfiliarCambio()" style="width:20px;height:20px;cursor:pointer;accent-color:#7B1FA2;flex-shrink:0">
+        <div>
+          <div style="font-size:13px;font-weight:800;color:#7B1FA2">⭐ Afiliar / identificar cliente</div>
+          <div style="font-size:11px;color:#888">Activa para sumar puntos de fidelidad</div>
+        </div>
+      </label>
+      <!-- Panel búsqueda -->
+      <div id="afiliarCambioPanel" style="display:none;margin-top:10px">
+        <input id="clienteCambioSearch" placeholder="🔍 Nombre, cédula o teléfono..." oninput="buscarClienteCambio()" style="width:100%;padding:8px 10px;border:2px solid #CE93D8;border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:8px">
+        <div id="clienteCambioList" style="max-height:130px;overflow-y:auto"></div>
+        <div id="clienteCambioSeleccionado" style="display:none;background:white;border-radius:8px;padding:8px;margin-top:6px;display:flex;justify-content:space-between;align-items:center">
+          <span id="clienteCambioNombre" style="font-weight:700;color:#7B1FA2;font-size:13px"></span>
+          <button onclick="deseleccionarClienteCambio()" style="background:none;border:none;color:#999;font-size:16px;cursor:pointer">✕</button>
+        </div>
+        <!-- Registrar nuevo -->
+        <div id="registrarNuevoCambio" style="display:none;margin-top:8px;border-top:1px dashed #CE93D8;padding-top:8px">
+          <div style="font-size:11px;color:#888;margin-bottom:6px">¿Cliente nuevo? Regístralo aquí:</div>
+          <input id="nuevoNombreCambio" placeholder="Nombre completo" style="width:100%;padding:7px 10px;border:1px solid #CE93D8;border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:6px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <input id="nuevoTelefonoCambio" placeholder="Teléfono" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="padding:7px 10px;border:1px solid #CE93D8;border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
+            <input id="nuevoCedulaCambio" placeholder="Cédula" maxlength="13" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="padding:7px 10px;border:1px solid #CE93D8;border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
+          </div>
+          <button onclick="registrarClienteCambio()" style="width:100%;margin-top:6px;background:#7B1FA2;color:white;border:none;border-radius:8px;padding:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">⭐ Registrar y afiliar</button>
+        </div>
+      </div>
     </div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeChange()">← Volver</button>
@@ -715,12 +755,13 @@ function doLogin(){
   // Set default dates for reportes
   const todayStr = new Date().toISOString().split('T')[0];
   setTimeout(()=>{
-    const rf1 = document.getElementById('reporteFechaInicio');
-    const rf2 = document.getElementById('reporteFechaFin');
-    const af = document.getElementById('anuladasFechaFilter');
-    if(rf1) rf1.value = todayStr;
-    if(rf2) rf2.value = todayStr;
-    if(af) af.value = todayStr;
+    ['resumenFechaInicio','resumenFechaFin',
+     'histFechaInicio','histFechaFin',
+     'reporteFechaInicio','reporteFechaFin',
+     'anuladasFechaInicio','anuladasFechaFin'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.value = todayStr;
+    });
   }, 500);
   // Sync users to Firebase on login
   setTimeout(()=>{
@@ -875,12 +916,6 @@ function updateCartUI(){
 }
 function cobrar(){
   if(!Object.keys(cart).length){showToast('⚠️ Agrega productos primero');return;}
-  // Check if we should ask for client (skip for credit/fiado as it has its own flow)
-  if(paymentMethod !== 'credit' && getClientes().length > 0 && !pendingClienteId){
-    // Ask if client has account - only show if there are registered clients
-    showClienteSelector();
-    return;
-  }
   _procesarCobro();
 }
 
@@ -893,33 +928,95 @@ function showClienteSelector(){
   const disc=getDiscount(sub);
   const total=sub-disc;
   openModalContent(`
-    <h3>👥 ¿El cliente tiene cuenta?</h3>
+    <h3>👥 Cliente</h3>
     <div style="background:#E3F2FD;border-radius:12px;padding:10px 14px;text-align:center;margin-bottom:14px">
       <div style="font-size:11px;color:#1565C0;font-weight:700">TOTAL</div>
       <div style="font-size:28px;font-weight:800;color:#1565C0;font-family:'DM Mono',monospace">$${total.toFixed(2)}</div>
     </div>
-    <div class="form-group">
-      <label>Buscar cliente</label>
-      <input id="clienteSearch" placeholder="Nombre, cédula o teléfono..." oninput="filtrarClientesModal()" autofocus style="width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:12px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none">
+
+    <!-- Checkbox afiliar -->
+    <div style="background:#F3E5F5;border-radius:12px;padding:12px 14px;margin-bottom:14px">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+        <input type="checkbox" id="chkAfiliar" onchange="toggleAfiliarPanel()" style="width:20px;height:20px;cursor:pointer;accent-color:#7B1FA2">
+        <div>
+          <div style="font-size:14px;font-weight:800;color:#7B1FA2">⭐ Afiliar / identificar cliente</div>
+          <div style="font-size:11px;color:#888">Activa para sumar puntos o registrar nuevo cliente</div>
+        </div>
+      </label>
     </div>
-    <div id="clienteModalList" style="max-height:200px;overflow-y:auto;margin-bottom:12px">
-      ${clientes.slice(0,5).map(c=>`
-        <div onclick="seleccionarCliente(${c.id})" style="padding:10px 12px;border:2px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center"
-          onmouseover="this.style.borderColor='var(--g1)'" onmouseout="this.style.borderColor='var(--border)'">
-          <div>
-            <div style="font-weight:700;font-size:13px">${c.nombre}</div>
-            <div style="font-size:11px;color:var(--muted)">${c.telefono||''} ${c.cedula?'· '+c.cedula:''}</div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-size:13px;font-weight:800;color:var(--g1)">⭐ ${(c.puntos||0).toFixed(1)}</div>
-          </div>
-        </div>`).join('')}
+
+    <!-- Panel cliente (oculto por defecto) -->
+    <div id="afiliarPanel" style="display:none">
+      <!-- Buscar existente -->
+      <div style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Buscar cliente existente</div>
+      <input id="clienteSearch" placeholder="🔍 Nombre, cédula o teléfono..." oninput="filtrarClientesModal()" style="width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:12px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:10px">
+      <div id="clienteModalList" style="max-height:160px;overflow-y:auto;margin-bottom:12px">
+        ${clientes.slice(0,4).map(c=>`
+          <div onclick="seleccionarCliente(${c.id})" style="padding:10px 12px;border:2px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center"
+            onmouseover="this.style.borderColor='var(--g1)';this.style.background='#f9f9f9'" onmouseout="this.style.borderColor='var(--border)';this.style.background='white'">
+            <div>
+              <div style="font-weight:700;font-size:13px">${c.nombre}</div>
+              <div style="font-size:11px;color:var(--muted)">${c.telefono||''} ${c.cedula?'· '+c.cedula:''}</div>
+            </div>
+            <div style="font-size:13px;font-weight:800;color:#7B1FA2">⭐ ${(c.puntos||0).toFixed(1)}</div>
+          </div>`).join('')}
+      </div>
+
+      <!-- Registrar nuevo -->
+      <div style="border-top:2px dashed var(--border);padding-top:12px;margin-top:4px">
+        <div style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:8px">➕ O registrar nuevo cliente</div>
+        <div class="form-group"><label>Nombre</label><input id="nuevoNombre" placeholder="Ej: Juan Pérez"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="form-group"><label>📱 Teléfono</label><input id="nuevoTelefono" placeholder="0991234567" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'')"></div>
+          <div class="form-group"><label>🪪 Cédula</label><input id="nuevoCedula" placeholder="1712345678" maxlength="13" oninput="this.value=this.value.replace(/[^0-9]/g,'')"></div>
+        </div>
+        <button onclick="registrarYSeleccionar()" style="width:100%;background:#7B1FA2;color:white;border:none;border-radius:12px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px">
+          ⭐ Afiliar y registrar venta
+        </button>
+      </div>
     </div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="cobrarSinCliente()">Sin cuenta</button>
+
+    <div class="modal-actions" style="margin-top:12px">
+      <button class="btn-cancel" onclick="cobrarSinCliente()">Sin cliente</button>
       <button class="btn-confirm" onclick="cobrarSinCliente()" style="background:#888">Saltar</button>
     </div>
   `);
+}
+
+function toggleAfiliarPanel(){
+  const chk = document.getElementById('chkAfiliar');
+  const panel = document.getElementById('afiliarPanel');
+  if(panel) panel.style.display = chk.checked ? 'block' : 'none';
+}
+
+function registrarYSeleccionar(){
+  const nombre = document.getElementById('nuevoNombre')?.value.trim();
+  const telefono = document.getElementById('nuevoTelefono')?.value.trim()||'';
+  const cedula = document.getElementById('nuevoCedula')?.value.trim()||'';
+  if(!nombre){ showToast('⚠️ Ingresa el nombre'); return; }
+  const clientes = getClientes();
+  // Check if already exists
+  const existe = clientes.find(c=>
+    (cedula && c.cedula===cedula) ||
+    (telefono && c.telefono===telefono) ||
+    c.nombre.toLowerCase()===nombre.toLowerCase()
+  );
+  if(existe){
+    showToast('✅ Cliente encontrado: '+existe.nombre);
+    seleccionarCliente(existe.id);
+    return;
+  }
+  const nuevo = {
+    id: Date.now(),
+    nombre, telefono, cedula,
+    puntos: 0, totalCompras: 0, visitas: 0,
+    fechaRegistro: new Date().toISOString().split('T')[0]
+  };
+  clientes.push(nuevo);
+  DB.set('clientes', clientes);
+  fbSave('clientes_db', 'all', clientes);
+  showToast('✅ Cliente '+nombre+' registrado y afiliado');
+  seleccionarCliente(nuevo.id);
 }
 
 function filtrarClientesModal(){
@@ -1066,12 +1163,22 @@ function cancelSale(){
   updateCartUI();
 }
 
-function setToday(){document.getElementById('dateFilter').value=new Date().toISOString().split('T')[0];renderHistorial();}
+function setToday(){
+  const today=new Date().toISOString().split('T')[0];
+  const i=document.getElementById('histFechaInicio');
+  const f=document.getElementById('histFechaFin');
+  if(i) i.value=today; if(f) f.value=today;
+  renderHistorial();
+}
+function setHistorialHoy(){setToday();}
 function getSalesByDate(d){return getSales().filter(s=>s.date===d);}
 function renderHistorial(){
-  const date=document.getElementById('dateFilter').value||new Date().toISOString().split('T')[0];
-  const sales=getSalesByDate(date);
-  const total=sales.reduce((s,v)=>s+v.total,0);
+  const today=new Date().toISOString().split('T')[0];
+  const fechaInicio=document.getElementById('histFechaInicio')?.value||today;
+  const fechaFin=document.getElementById('histFechaFin')?.value||today;
+  const sales=getSales().filter(s=>s.date>=fechaInicio&&s.date<=fechaFin);
+  const salesValidas=sales.filter(s=>!s.anulada);
+  const total=salesValidas.reduce((s,v)=>s+v.total,0);
   const payL={cash:'💵 Efectivo',transfer:'📱 Transf.',card:'💳 Tarjeta',credit:'📝 Fiado'};
   document.getElementById('historialSummary').innerHTML=sales.length?`
     <div style="background:var(--g1);color:white;border-radius:14px;padding:14px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
@@ -1100,13 +1207,28 @@ function renderHistorial(){
   `).join('');
 }
 
+function setResumenHoy(){
+  const today = new Date().toISOString().split('T')[0];
+  const i = document.getElementById('resumenFechaInicio');
+  const f = document.getElementById('resumenFechaFin');
+  if(i) i.value = today;
+  if(f) f.value = today;
+  renderResumen();
+}
+
 function renderResumen(){
   const today=new Date().toISOString().split('T')[0];
-  const sales=getSalesByDate(today);
+  const fechaInicio = document.getElementById('resumenFechaInicio')?.value || today;
+  const fechaFin = document.getElementById('resumenFechaFin')?.value || today;
+  const allSales = getSales().filter(s=>s.date>=fechaInicio && s.date<=fechaFin);
+  const sales=allSales.filter(s=>!s.anulada);
   const total=sales.reduce((s,v)=>s+v.total,0);
   const n=sales.length;const prom=n?total/n:0;const ahorro=total*.2;
+  const label = fechaInicio===fechaFin ? (fechaInicio===today?'hoy':fechaInicio) : fechaInicio+' al '+fechaFin;
+  const chartTitle = document.getElementById('resumenChartTitle');
+  if(chartTitle) chartTitle.textContent = '🏆 Más vendidos — '+label;
   document.getElementById('kpiGrid').innerHTML=`
-    <div class="kpi-card accent"><div class="kpi-label">💰 Total hoy</div><div class="kpi-val">$${total.toFixed(2)}</div><div class="kpi-sub">${n} ventas</div></div>
+    <div class="kpi-card accent"><div class="kpi-label">💰 Total</div><div class="kpi-val">$${total.toFixed(2)}</div><div class="kpi-sub">${n} ventas · ${label}</div></div>
     <div class="kpi-card"><div class="kpi-label">📊 Promedio</div><div class="kpi-val">$${prom.toFixed(2)}</div><div class="kpi-sub">por venta</div></div>
     <div class="kpi-card"><div class="kpi-label">🐷 Ahorro 20%</div><div class="kpi-val">$${ahorro.toFixed(2)}</div><div class="kpi-sub">para inversión</div></div>
     <div class="kpi-card"><div class="kpi-label">💵 Para caja</div><div class="kpi-val">$${(total-ahorro).toFixed(2)}</div><div class="kpi-sub">disponible</div></div>
@@ -1126,9 +1248,10 @@ function renderResumen(){
 function shareWhatsApp(){
   const today=new Date().toISOString().split('T')[0];
   const sales=getSalesByDate(today);
-  const total=sales.reduce((s,v)=>s+v.total,0);
+  const salesValidas=sales.filter(s=>!s.anulada);
+  const total=salesValidas.reduce((s,v)=>s+v.total,0);
   const ahorro=total*.2;
-  const fiadosHoy=sales.filter(s=>s.paymentMethod==='credit').reduce((s,v)=>s+v.total,0);
+  const fiadosHoy=salesValidas.filter(s=>s.paymentMethod==='credit').reduce((s,v)=>s+v.total,0);
   const low=getLowStock();
   const d=new Date();
   let txt=`🏪 *TENTEN MICROMERCADO*\n📅 ${d.toLocaleDateString('es-EC')}\n\n💰 Total: $${total.toFixed(2)}\n🛒 Ventas: ${sales.length}\n🐷 Ahorro 20%: $${ahorro.toFixed(2)}\n💵 Caja: $${(total-ahorro).toFixed(2)}`;
@@ -1989,7 +2112,11 @@ async function confirmarAnulacion(id){
 }
 
 function setHoyAnuladas(){
-  document.getElementById('anuladasFechaFilter').value = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split('T')[0];
+  const i = document.getElementById('anuladasFechaInicio');
+  const f = document.getElementById('anuladasFechaFin');
+  if(i) i.value = today;
+  if(f) f.value = today;
   renderReportes();
 }
 
@@ -1998,13 +2125,15 @@ function renderReportes(){
   const allSales = getSales();
 
   // --- ANULADAS ---
-  const anuladasFecha = document.getElementById('anuladasFechaFilter').value || today;
-  const anuladas = allSales.filter(s=>s.anulada && s.date===anuladasFecha);
+  const anuladasInicio = document.getElementById('anuladasFechaInicio')?.value || today;
+  const anuladasFin = document.getElementById('anuladasFechaFin')?.value || today;
+  const anuladas = allSales.filter(s=>s.anulada && s.date>=anuladasInicio && s.date<=anuladasFin);
   const totalAnulado = anuladas.reduce((s,v)=>s+v.total,0);
+  const labelAnuladas = anuladasInicio===anuladasFin ? anuladasInicio : anuladasInicio+' al '+anuladasFin;
 
   document.getElementById('anuladasResumen').innerHTML = `
     <div style="background:#FFEBEE;border-radius:12px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center">
-      <div><div style="font-size:11px;color:#999">Ventas anuladas ${anuladasFecha}</div><div style="font-size:20px;font-weight:800;color:var(--danger);font-family:'DM Mono',monospace">${anuladas.length} ventas</div></div>
+      <div><div style="font-size:11px;color:#999">Ventas anuladas ${labelAnuladas}</div><div style="font-size:20px;font-weight:800;color:var(--danger);font-family:'DM Mono',monospace">${anuladas.length} ventas</div></div>
       <div style="text-align:right"><div style="font-size:11px;color:#999">Total anulado</div><div style="font-size:20px;font-weight:800;color:var(--danger);font-family:'DM Mono',monospace">$${totalAnulado.toFixed(2)}</div></div>
     </div>`;
 
@@ -2705,6 +2834,177 @@ function exportClientesExcel(){
   XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
   XLSX.writeFile(wb, 'TENTEN_Clientes_'+new Date().toISOString().split('T')[0]+'.xlsx');
   showToast('✅ Excel descargado');
+}
+
+function toggleAfiliarTicket(){
+  const chk = document.getElementById('chkAfiliarTicket');
+  const panel = document.getElementById('afiliarTicketPanel');
+  if(!panel) return;
+  panel.style.display = chk.checked ? 'block' : 'none';
+  if(chk.checked){
+    setTimeout(()=>{
+      const inp = document.getElementById('clienteTicketSearch');
+      if(inp) inp.focus();
+      buscarClienteTicket();
+    }, 100);
+  } else {
+    pendingClienteId = null;
+    const sel = document.getElementById('clienteSeleccionado');
+    if(sel) sel.style.display = 'none';
+  }
+}
+
+function buscarClienteTicket(){
+  const q = (document.getElementById('clienteTicketSearch')?.value||'').toLowerCase().trim();
+  const clientes = getClientes().filter(c=>
+    !q ||
+    c.nombre.toLowerCase().includes(q) ||
+    (c.cedula||'').includes(q) ||
+    (c.telefono||'').includes(q)
+  ).slice(0,5);
+  const list = document.getElementById('clienteTicketList');
+  if(!list) return;
+  if(!clientes.length && q){
+    // Show option to register new
+    list.innerHTML = `
+      <div style="color:#888;font-size:11px;padding:4px 0;margin-bottom:6px">Sin resultados — ¿Registrar nuevo?</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <input id="nuevoNombreTicket" placeholder="Nombre" style="padding:6px 8px;border:1px solid #CE93D8;border-radius:6px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
+        <input id="nuevoTelefonoTicket" placeholder="Teléfono" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="padding:6px 8px;border:1px solid #CE93D8;border-radius:6px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
+      </div>
+      <button onclick="registrarClienteTicket()" style="width:100%;margin-top:6px;background:#7B1FA2;color:white;border:none;border-radius:6px;padding:7px;font-size:12px;font-weight:700;cursor:pointer">⭐ Registrar y afiliar</button>`;
+  } else {
+    list.innerHTML = clientes.map(c=>`
+      <div onclick="seleccionarClienteTicket(${c.id},'${c.nombre.replace(/'/g,"\'")}'')" 
+        style="padding:7px 8px;border:1px solid #CE93D8;border-radius:8px;margin-bottom:4px;cursor:pointer;display:flex;justify-content:space-between;background:white"
+        onmouseover="this.style.background='#EDE7F6'" onmouseout="this.style.background='white'">
+        <div>
+          <div style="font-weight:700">${c.nombre}</div>
+          <div style="font-size:10px;color:#888">${c.telefono||''} ${c.cedula?'· '+c.cedula:''}</div>
+        </div>
+        <div style="font-weight:800;color:#7B1FA2">⭐${(c.puntos||0).toFixed(0)}</div>
+      </div>`).join('') || '<div style="color:#888;font-size:11px;padding:4px">Escribe para buscar...</div>';
+  }
+}
+
+function seleccionarClienteTicket(id, nombre){
+  pendingClienteId = id;
+  const sel = document.getElementById('clienteSeleccionado');
+  const nomEl = document.getElementById('clienteSelNombre');
+  const list = document.getElementById('clienteTicketList');
+  const inp = document.getElementById('clienteTicketSearch');
+  if(sel){ sel.style.display='flex'; }
+  if(nomEl) nomEl.textContent = '✅ '+nombre;
+  if(list) list.innerHTML = '';
+  if(inp) inp.value = '';
+  showToast('✅ Cliente: '+nombre);
+}
+
+function deseleccionarClienteTicket(){
+  pendingClienteId = null;
+  const sel = document.getElementById('clienteSeleccionado');
+  if(sel) sel.style.display = 'none';
+  buscarClienteTicket();
+}
+
+function registrarClienteTicket(){
+  const nombre = document.getElementById('nuevoNombreTicket')?.value.trim();
+  const telefono = document.getElementById('nuevoTelefonoTicket')?.value.trim()||'';
+  if(!nombre){ showToast('⚠️ Ingresa el nombre'); return; }
+  const clientes = getClientes();
+  const nuevo = {
+    id: Date.now(), nombre, telefono, cedula:'',
+    puntos:0, totalCompras:0, visitas:0,
+    fechaRegistro: new Date().toISOString().split('T')[0]
+  };
+  clientes.push(nuevo);
+  DB.set('clientes', clientes);
+  fbSave('clientes_db','all',clientes);
+  seleccionarClienteTicket(nuevo.id, nombre);
+  showToast('⭐ '+nombre+' registrado y afiliado');
+}
+
+function toggleAfiliarCambio(){
+  const chk = document.getElementById('chkAfiliarCambio');
+  const panel = document.getElementById('afiliarCambioPanel');
+  if(panel) panel.style.display = chk.checked ? 'block' : 'none';
+  if(chk.checked){
+    setTimeout(()=>{
+      document.getElementById('clienteCambioSearch')?.focus();
+      buscarClienteCambio();
+    },100);
+  } else {
+    pendingClienteId = null;
+  }
+}
+
+function buscarClienteCambio(){
+  const q = (document.getElementById('clienteCambioSearch')?.value||'').toLowerCase().trim();
+  const clientes = getClientes().filter(c=>
+    !q ||
+    c.nombre.toLowerCase().includes(q)||
+    (c.cedula||'').includes(q)||
+    (c.telefono||'').includes(q)
+  ).slice(0,4);
+  const list = document.getElementById('clienteCambioList');
+  const nuevoDiv = document.getElementById('registrarNuevoCambio');
+  if(!list) return;
+  if(!clientes.length && q){
+    list.innerHTML = '<div style="font-size:11px;color:#888;padding:4px">Sin resultados</div>';
+    if(nuevoDiv) nuevoDiv.style.display = 'block';
+  } else {
+    if(nuevoDiv) nuevoDiv.style.display = 'none';
+    list.innerHTML = clientes.map(c=>`
+      <div onclick="seleccionarClienteCambio(${c.id},'${c.nombre.replace(/'/g,"\'")}'')"
+        style="padding:8px 10px;border:1px solid #CE93D8;border-radius:8px;margin-bottom:4px;cursor:pointer;display:flex;justify-content:space-between;background:white"
+        onmouseover="this.style.background='#EDE7F6'" onmouseout="this.style.background='white'">
+        <div>
+          <div style="font-weight:700;font-size:13px">${c.nombre}</div>
+          <div style="font-size:10px;color:#888">${c.telefono||''} ${c.cedula?'· '+c.cedula:''}</div>
+        </div>
+        <div style="font-weight:800;color:#7B1FA2;font-size:12px">⭐${(c.puntos||0).toFixed(0)}</div>
+      </div>`).join('') || '<div style="font-size:11px;color:#888;padding:4px">Escribe para buscar...</div>';
+  }
+}
+
+function seleccionarClienteCambio(id, nombre){
+  pendingClienteId = id;
+  const sel = document.getElementById('clienteCambioSeleccionado');
+  const nomEl = document.getElementById('clienteCambioNombre');
+  const list = document.getElementById('clienteCambioList');
+  const inp = document.getElementById('clienteCambioSearch');
+  const nuevo = document.getElementById('registrarNuevoCambio');
+  if(sel) sel.style.display = 'flex';
+  if(nomEl) nomEl.textContent = '✅ '+nombre;
+  if(list) list.innerHTML = '';
+  if(inp) inp.value = '';
+  if(nuevo) nuevo.style.display = 'none';
+  showToast('✅ Cliente: '+nombre);
+}
+
+function deseleccionarClienteCambio(){
+  pendingClienteId = null;
+  const sel = document.getElementById('clienteCambioSeleccionado');
+  if(sel) sel.style.display = 'none';
+  buscarClienteCambio();
+}
+
+function registrarClienteCambio(){
+  const nombre = document.getElementById('nuevoNombreCambio')?.value.trim();
+  const telefono = document.getElementById('nuevoTelefonoCambio')?.value.trim()||'';
+  const cedula = document.getElementById('nuevoCedulaCambio')?.value.trim()||'';
+  if(!nombre){ showToast('⚠️ Ingresa el nombre'); return; }
+  const clientes = getClientes();
+  const nuevo = {
+    id:Date.now(), nombre, telefono, cedula,
+    puntos:0, totalCompras:0, visitas:0,
+    fechaRegistro:new Date().toISOString().split('T')[0]
+  };
+  clientes.push(nuevo);
+  DB.set('clientes', clientes);
+  fbSave('clientes_db','all',clientes);
+  seleccionarClienteCambio(nuevo.id, nombre);
+  showToast('⭐ '+nombre+' registrado y afiliado');
 }
 
 function renderAll(){renderCategories();renderProducts();updateCartUI();}
