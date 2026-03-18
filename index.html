@@ -283,7 +283,9 @@ html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);colo
     <div class="nav-tab" onclick="goTab('historial')"><span class="ti">📋</span>Historial</div>
     <div class="nav-tab" onclick="goTab('resumen')"><span class="ti">📊</span>Resumen</div>
     <div class="nav-tab" onclick="goTab('fiados')"><span class="ti">📝</span>Fiados</div>
+    <div class="nav-tab" onclick="goTab('clientes')"><span class="ti">👥</span>Clientes</div>
     <div class="nav-tab" onclick="goTab('inventario')"><span class="ti">📦</span>Inventario</div>
+    <div class="nav-tab admin-only" onclick="goTab('reportes')" style="display:none"><span class="ti">📊</span>Reportes</div>
     <div class="nav-tab admin-only" onclick="goTab('admin')" style="display:none"><span class="ti">⚙️</span>Admin</div>
   </div>
   <div class="app-body">
@@ -313,10 +315,59 @@ html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);colo
       <button class="btn-whatsapp" onclick="shareWhatsApp()">📲 Enviar resumen por WhatsApp</button>
     </div>
     <div id="tab-fiados" style="display:none">
-      <div class="section-hdr"><h2>📝 Control de Fiados</h2><button class="btn-add" onclick="openFiadoModal(null)">+ Nuevo</button></div>
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <h2 style="font-size:15px;font-weight:800">📝 Control de Fiados</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn-add" onclick="openFiadoModal(null)">+ Nuevo</button>
+          <button onclick="exportFiadosExcel()" style="background:#2E7D32;color:white;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer">📥 Excel</button>
+        </div>
+      </div>
+      <!-- Buscador -->
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <input type="text" id="fiadoBuscar" placeholder="🔍 Buscar por nombre, cédula o teléfono..." oninput="renderFiados()" style="flex:1;padding:10px 14px;border:2px solid var(--border);border-radius:12px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;background:white">
+        <button onclick="limpiarFiltroFiado()" style="background:var(--border);border:none;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer">✕</button>
+      </div>
+      <!-- Filtros -->
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <select id="fiadoEstadoFilter" onchange="renderFiados()" style="flex:1;padding:8px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;background:white;outline:none">
+          <option value="pendiente">💳 Pendientes</option>
+          <option value="pagado">✅ Pagados</option>
+          <option value="todos">📋 Todos</option>
+        </select>
+        <input type="date" id="fiadoFechaFilter" onchange="renderFiados()" style="flex:1;padding:8px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;background:white;outline:none">
+      </div>
       <div id="fiadoSummary"></div>
       <div id="fiadoList"></div>
     </div>
+    <div id="tab-clientes" style="display:none">
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <h2 style="font-size:15px;font-weight:800">👥 Cartera de Clientes</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button onclick="openClienteModal(null)" class="btn-add">+ Nuevo Cliente</button>
+          <button onclick="openConfigPuntos()" style="background:#1565C0;color:white;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer">⚙️ Config Puntos</button>
+        </div>
+      </div>
+      <!-- Buscador -->
+      <div style="margin-bottom:10px">
+        <input type="text" id="clienteBuscar" placeholder="🔍 Buscar por nombre, cédula o teléfono..." oninput="renderClientes()" style="width:100%;padding:10px 14px;border:2px solid var(--border);border-radius:12px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;background:white">
+      </div>
+      <!-- Filtros -->
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <select id="clienteOrdenFilter" onchange="renderClientes()" style="flex:1;padding:8px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;background:white;outline:none">
+          <option value="puntos">⭐ Por puntos</option>
+          <option value="compras">🛒 Por compras</option>
+          <option value="nombre">👤 Por nombre</option>
+          <option value="canje">🎁 Listos para canjear</option>
+        </select>
+      </div>
+      <!-- KPIs -->
+      <div id="clientesKpis" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"></div>
+      <!-- Lista -->
+      <div id="clientesList"></div>
+    </div>
+
     <div id="tab-inventario" style="display:none">
       <!-- Header -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
@@ -344,6 +395,39 @@ html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);colo
       <div id="invKpis" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"></div>
       <!-- Product list by category -->
       <div id="invTable"></div>
+    </div>
+
+    <div id="tab-reportes" style="display:none">
+
+      <!-- VENTAS ANULADAS -->
+      <div style="margin-bottom:24px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <h2 style="font-size:15px;font-weight:800">🚫 Ventas Anuladas</h2>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="date" id="anuladasFechaFilter" onchange="renderReportes()" style="padding:8px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;outline:none;background:white">
+            <button onclick="setHoyAnuladas()" style="background:var(--g1);color:white;border:none;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:700;cursor:pointer">Hoy</button>
+          </div>
+        </div>
+        <div id="anuladasResumen" style="margin-bottom:10px"></div>
+        <div id="anuladasList"></div>
+      </div>
+
+      <!-- HISTORIAL DE VENTAS -->
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <h2 style="font-size:15px;font-weight:800">📋 Historial de Ventas</h2>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="date" id="reporteFechaInicio" style="padding:8px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;outline:none;background:white">
+            <span style="font-size:13px;color:var(--muted)">al</span>
+            <input type="date" id="reporteFechaFin" style="padding:8px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;outline:none;background:white">
+            <button onclick="renderReportes()" style="background:var(--g1);color:white;border:none;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:700;cursor:pointer">🔍 Filtrar</button>
+            <button onclick="exportHistorialExcel()" style="background:#2E7D32;color:white;border:none;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:700;cursor:pointer">📥 Excel</button>
+          </div>
+        </div>
+        <div id="reporteResumen" style="margin-bottom:10px"></div>
+        <div id="reporteList"></div>
+      </div>
+
     </div>
 
     <div id="tab-admin" style="display:none">
@@ -393,7 +477,10 @@ html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);colo
       <div class="tot-row" id="discountRow" style="display:none;color:var(--danger)"><span class="trl">Descuento</span><span class="trv" id="discountAmt">-$0.00</span></div>
       <div class="tot-row big"><span>TOTAL</span><span id="ticketTotalAmt">$0.00</span></div>
     </div>
-    <button class="btn-cobrar" onclick="cobrar()">✅ COBRADO — Registrar Venta</button>
+    <div style="display:flex;gap:6px;margin-top:7px">
+      <button class="btn-cobrar" onclick="cobrar()" style="flex:1">✅ COBRADO</button>
+      <button onclick="cobrarConFactura()" style="flex:1;background:#1565C0;color:white;border:none;border-radius:14px;padding:13px;font-size:13px;font-weight:800;cursor:pointer">🧾 Con Factura</button>
+    </div>
     <button class="btn-cancel-sale" onclick="cancelSale()">🗑️ Cancelar venta</button>
   </div>
   </div><!-- end app-body -->
@@ -621,10 +708,20 @@ function doLogin(){
   document.getElementById('appShell').style.display='flex';
   document.getElementById('roleBadge').textContent=user.role==='admin'?'👑 Admin':'👤 Cajero';
   document.getElementById('topDate').textContent=new Date().toLocaleDateString('es-EC',{weekday:'long',day:'numeric',month:'long'});
-  if(user.role==='admin') document.querySelector('.admin-only').style.display='';
+  if(user.role==='admin') document.querySelectorAll('.admin-only').forEach(el=>el.style.display='');
   document.getElementById('dateFilter').value=new Date().toISOString().split('T')[0];
   renderAll(); checkStockAlerts();
   setTimeout(updateConnIndicator, 2000);
+  // Set default dates for reportes
+  const todayStr = new Date().toISOString().split('T')[0];
+  setTimeout(()=>{
+    const rf1 = document.getElementById('reporteFechaInicio');
+    const rf2 = document.getElementById('reporteFechaFin');
+    const af = document.getElementById('anuladasFechaFilter');
+    if(rf1) rf1.value = todayStr;
+    if(rf2) rf2.value = todayStr;
+    if(af) af.value = todayStr;
+  }, 500);
   // Sync users to Firebase on login
   setTimeout(()=>{
     if(fsdb && isOnline){
@@ -644,21 +741,29 @@ document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='
 document.getElementById('loginUser').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginPass').focus()});
 
 function goTab(tab){
-  ['vender','historial','resumen','fiados','inventario','admin'].forEach(t=>{
+  ['vender','historial','resumen','fiados','clientes','inventario','reportes','admin'].forEach(t=>{
     const el=document.getElementById('tab-'+t);
     if(el) el.style.display=t===tab?'block':'none';
   });
   document.querySelectorAll('.nav-tab').forEach((el,i)=>{
-    el.classList.toggle('active',['vender','historial','resumen','fiados','inventario','admin'][i]===tab);
+    el.classList.toggle('active',['vender','historial','resumen','fiados','clientes','inventario','reportes','admin'][i]===tab);
   });
   document.getElementById('ticketPanel').style.display=tab==='vender'?'block':'none';
+  if(tab==='vender') setTimeout(populateClientesSelect, 200);
   if(tab==='historial') renderHistorial();
   if(tab==='resumen') renderResumen();
   if(tab==='fiados') renderFiados();
+  if(tab==='clientes') renderClientes();
+  if(tab==='clientes') renderClientes();
   if(tab==='inventario') renderInventario();
+  if(tab==='reportes') renderReportes();
   if(tab==='admin'){renderUsers();renderAdminProducts();}
 }
 
+function getClientes(){return DB.get('clientes')||[];}
+function getConfigPuntos(){return DB.get('configPuntos')||{puntoPorDolar:0.5,metaPuntos:100,premio:'Premio sorpresa'};}
+function getClientes(){return DB.get('clientes')||[]}
+function getPuntosConfig(){return DB.get('puntosConfig')||{dolarPorPunto:1, metaPuntos:100, premio:'Producto gratis a elegir'}}
 function getProducts(){return DB.get('products')||[]}
 function getSales(){return DB.get('sales')||[]}
 function getUsers(){return DB.get('users')||[]}
@@ -770,6 +875,82 @@ function updateCartUI(){
 }
 function cobrar(){
   if(!Object.keys(cart).length){showToast('⚠️ Agrega productos primero');return;}
+  // Check if we should ask for client (skip for credit/fiado as it has its own flow)
+  if(paymentMethod !== 'credit' && getClientes().length > 0 && !pendingClienteId){
+    // Ask if client has account - only show if there are registered clients
+    showClienteSelector();
+    return;
+  }
+  _procesarCobro();
+}
+
+let pendingClienteId = null;
+
+function showClienteSelector(){
+  const clientes = getClientes();
+  const items=Object.values(cart);
+  const sub=items.reduce((s,i)=>s+(i.price*i.qty),0);
+  const disc=getDiscount(sub);
+  const total=sub-disc;
+  openModalContent(`
+    <h3>👥 ¿El cliente tiene cuenta?</h3>
+    <div style="background:#E3F2FD;border-radius:12px;padding:10px 14px;text-align:center;margin-bottom:14px">
+      <div style="font-size:11px;color:#1565C0;font-weight:700">TOTAL</div>
+      <div style="font-size:28px;font-weight:800;color:#1565C0;font-family:'DM Mono',monospace">$${total.toFixed(2)}</div>
+    </div>
+    <div class="form-group">
+      <label>Buscar cliente</label>
+      <input id="clienteSearch" placeholder="Nombre, cédula o teléfono..." oninput="filtrarClientesModal()" autofocus style="width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:12px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none">
+    </div>
+    <div id="clienteModalList" style="max-height:200px;overflow-y:auto;margin-bottom:12px">
+      ${clientes.slice(0,5).map(c=>`
+        <div onclick="seleccionarCliente(${c.id})" style="padding:10px 12px;border:2px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center"
+          onmouseover="this.style.borderColor='var(--g1)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div>
+            <div style="font-weight:700;font-size:13px">${c.nombre}</div>
+            <div style="font-size:11px;color:var(--muted)">${c.telefono||''} ${c.cedula?'· '+c.cedula:''}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:13px;font-weight:800;color:var(--g1)">⭐ ${(c.puntos||0).toFixed(1)}</div>
+          </div>
+        </div>`).join('')}
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="cobrarSinCliente()">Sin cuenta</button>
+      <button class="btn-confirm" onclick="cobrarSinCliente()" style="background:#888">Saltar</button>
+    </div>
+  `);
+}
+
+function filtrarClientesModal(){
+  const q = document.getElementById('clienteSearch').value.toLowerCase();
+  const clientes = getClientes().filter(c=>
+    c.nombre.toLowerCase().includes(q)||(c.cedula||'').includes(q)||(c.telefono||'').includes(q)
+  );
+  document.getElementById('clienteModalList').innerHTML = clientes.slice(0,5).map(c=>`
+    <div onclick="seleccionarCliente(${c.id})" style="padding:10px 12px;border:2px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center"
+      onmouseover="this.style.borderColor='var(--g1)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div>
+        <div style="font-weight:700;font-size:13px">${c.nombre}</div>
+        <div style="font-size:11px;color:var(--muted)">${c.telefono||''} ${c.cedula?'· '+c.cedula:''}</div>
+      </div>
+      <div style="font-size:13px;font-weight:800;color:var(--g1)">⭐ ${(c.puntos||0).toFixed(1)}</div>
+    </div>`).join('') || '<div style="text-align:center;color:var(--muted);padding:10px;font-size:13px">Sin resultados</div>';
+}
+
+function seleccionarCliente(id){
+  pendingClienteId = id;
+  closeModal();
+  _procesarCobro();
+}
+
+function cobrarSinCliente(){
+  pendingClienteId = null;
+  closeModal();
+  _procesarCobro();
+}
+
+function _procesarCobro(){
   const items=Object.values(cart);
   const sub=items.reduce((s,i)=>s+(i.price*i.qty),0);
   const disc=getDiscount(sub);
@@ -788,10 +969,14 @@ function cobrar(){
     openModalContent(`
       <h3>📝 Registrar Fiado</h3>
       <div class="form-group"><label>Nombre del cliente</label><input id="fiadoClient" placeholder="Ej: Juan Pérez" autofocus></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label>📱 Teléfono</label><input id="fiadoTelefono" placeholder="0991234567" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'')"></div>
+        <div class="form-group"><label>🪪 Cédula</label><input id="fiadoCedula" placeholder="1712345678" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'')"></div>
+      </div>
       <div class="form-group"><label>Nota (opcional)</label><input id="fiadoNote" placeholder="Ej: Cobrar el viernes"></div>
       <div style="background:#FFF3E0;border-radius:12px;padding:14px;text-align:center;margin:12px 0">
         <div style="font-size:12px;color:var(--warn);font-weight:700">TOTAL A FIAR</div>
-        <div style="font-size:28px;font-weight:800;color:var(--danger);font-family:'DM Mono',monospace">$${total.toFixed(2)}</div>
+        <div style="font-size:28px;font-weight:800;color:var(--danger);font-family:'DM Mono',monospace">$\${total.toFixed(2)}</div>
       </div>
       <div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancelar</button><button class="btn-confirm" onclick="saveFiadoSale()">Confirmar Fiado</button></div>
     `);
@@ -825,16 +1010,45 @@ function closeChange(){document.getElementById('changeOverlay').classList.remove
 function saveFiadoSale(){
   const client=document.getElementById('fiadoClient').value.trim();
   const note=document.getElementById('fiadoNote').value.trim();
+  const telefono=(document.getElementById('fiadoTelefono')?.value||'').trim();
+  const cedula=(document.getElementById('fiadoCedula')?.value||'').trim();
   if(!client){showToast('⚠️ Ingresa el nombre');return;}
-  pendingSale.fiadoClient=client;pendingSale.fiadoNote=note;
+  pendingSale.fiadoClient=client;
+  pendingSale.fiadoNote=note;
+  pendingSale.fiadoTelefono=telefono;
+  pendingSale.fiadoCedula=cedula;
   const fiados=getFiados();
   const existing=fiados.find(f=>f.client.toLowerCase()===client.toLowerCase()&&!f.paid);
   const today=pendingSale.date;
-  if(existing){existing.entries.push({date:today,amount:pendingSale.total,note});existing.total+=pendingSale.total;}
-  else fiados.push({id:Date.now(),client,total:pendingSale.total,paid:false,entries:[{date:today,amount:pendingSale.total,note}]});
+  if(existing){
+    existing.entries.push({date:today,amount:pendingSale.total,note});
+    existing.total+=pendingSale.total;
+    if(telefono) existing.telefono=telefono;
+    if(cedula) existing.cedula=cedula;
+  } else {
+    fiados.push({id:Date.now(),client,telefono,cedula,total:pendingSale.total,paid:false,entries:[{date:today,amount:pendingSale.total,note}]});
+  }
   DB.set('fiados',fiados);closeModal();finalizeSale(pendingSale);
 }
 function finalizeSale(sale){
+  // Add factura data if present
+  if(pendingFactura){
+    sale.factNombre = pendingFactura.nombre;
+    sale.factCedula = pendingFactura.cedula;
+    pendingFactura = null;
+  }
+  // Add points if client selected
+  if(pendingClienteId){
+    const ptsGanados = sumarPuntosCliente(pendingClienteId, sale.total);
+    sale.clienteId = pendingClienteId;
+    const c = getClientes().find(x=>x.id===pendingClienteId);
+    if(c) sale.clienteNombre = c.nombre;
+    if(ptsGanados) showToast('⭐ +'+ptsGanados.toFixed(1)+' puntos para '+(c?.nombre||'cliente'));
+    pendingClienteId = null;
+  }
+  // Add cliente fidelizacion
+  const clienteId = parseInt(document.getElementById('clienteVentaSelect')?.value)||0;
+  if(clienteId){ sale.clienteId = clienteId; addPuntosCliente(sale); }
   const sales=getSales();sales.unshift(sale);DB.set('sales',sales);
   const prods=getProducts();
   sale.items.forEach(si=>{const p=prods.find(x=>x.id===si.id);if(p&&p.stock>0)p.stock=Math.max(0,p.stock-si.qty);});
@@ -867,21 +1081,23 @@ function renderHistorial(){
   const cont=document.getElementById('historialList');
   if(!sales.length){cont.innerHTML='<div class="empty"><div class="ei">🛒</div><p>Sin ventas en esta fecha</p></div>';return;}
   cont.innerHTML=sales.map(s=>`
-    <div class="sale-card">
+    <div class="sale-card" style="${s.anulada?'opacity:.55;border-left-color:#999':''}">
       <div class="sc-top">
-        <div style="display:flex;align-items:center;gap:8px"><span class="sc-hora">🕐 ${s.time}</span><span class="sc-user">${s.user}</span></div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="sc-hora">🕐 ${s.time}</span>
+          <span class="sc-user">${s.user}</span>
+          ${s.anulada?'<span style="background:#FFEBEE;color:var(--danger);font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px">🚫 ANULADA</span>':''}
+        </div>
         <div style="display:flex;align-items:center;gap:6px">
-          <span class="sc-total">$${s.total.toFixed(2)}</span>
+          <span class="sc-total" style="${s.anulada?'text-decoration:line-through;color:#999':''}">$${s.total.toFixed(2)}</span>
           <button onclick='showReceipt(${JSON.stringify(s)})' style="background:#FFF3CD;border:none;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;color:var(--g1)">🖨️</button>
+          ${currentUser&&currentUser.role==='admin'&&!s.anulada?`<button onclick="anularVenta(${s.id})" style="background:#FFEBEE;border:none;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;color:var(--danger)">🚫</button>`:''}
         </div>
       </div>
       <div class="sc-items">${s.items.map(i=>`${i.qty}× ${i.name}`).join(' · ')}</div>
-      <div class="sc-badges">
-        <span class="badge badge-${s.paymentMethod}">${payL[s.paymentMethod]||s.paymentMethod}</span>
-        ${s.discountLabel?`<span class="badge badge-discount">🏷️ -${s.discountLabel}</span>`:''}
-        ${s.fiadoClient?`<span class="badge badge-credit">📝 ${s.fiadoClient}</span>`:''}
-      </div>
-    </div>`).join('');
+      ${s.anulada?`<div style="font-size:11px;color:#999;margin-top:4px">🚫 Anulada por: ${s.anuladaPor||'Admin'} — ${s.anuladaFecha||''} — ${s.anuladaMotivo||''}</div>`:''}
+    </div>
+  `).join('');
 }
 
 function renderResumen(){
@@ -923,28 +1139,93 @@ function shareWhatsApp(){
   else{navigator.clipboard&&navigator.clipboard.writeText(txt);showToast('📋 Copiado para WhatsApp');}
 }
 
+function limpiarFiltroFiado(){
+  document.getElementById('fiadoFechaFilter').value='';
+  document.getElementById('fiadoEstadoFilter').value='pendiente';
+  document.getElementById('fiadoBuscar').value='';
+  renderFiados();
+}
+
 function renderFiados(){
-  const fiados=getFiados().filter(f=>!f.paid);
-  const totalDeuda=fiados.reduce((s,f)=>s+f.total,0);
+  const estadoFilter = document.getElementById('fiadoEstadoFilter')?.value || 'pendiente';
+  const fechaFilter = document.getElementById('fiadoFechaFilter')?.value || '';
+  let allFiados = getFiados();
+
+  // Filter by estado
+  let fiados;
+  if(estadoFilter==='pendiente') fiados = allFiados.filter(f=>!f.paid);
+  else if(estadoFilter==='pagado') fiados = allFiados.filter(f=>f.paid);
+  else fiados = allFiados;
+
+  // Filter by fecha
+  if(fechaFilter){
+    fiados = fiados.filter(f=>f.entries.some(e=>e.date===fechaFilter));
+  }
+
+  // Filter by search (nombre, cedula, telefono)
+  const buscar = (document.getElementById('fiadoBuscar')?.value||'').toLowerCase().trim();
+  if(buscar){
+    fiados = fiados.filter(f=>
+      f.client.toLowerCase().includes(buscar) ||
+      (f.cedula||'').includes(buscar) ||
+      (f.telefono||'').includes(buscar)
+    );
+  }
+
+  const totalDeuda = allFiados.filter(f=>!f.paid).reduce((s,f)=>s+f.total,0);
+  const totalPagado = allFiados.filter(f=>f.paid).reduce((s,f)=>s+f.total,0);
+
   document.getElementById('fiadoSummary').innerHTML=`
-    <div class="fiado-summary"><div><div class="fs-label">Total adeudado</div><div class="fs-val">$${totalDeuda.toFixed(2)}</div></div><div style="text-align:right"><div class="fs-label">${fiados.length} clientes</div></div></div>`;
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div class="fiado-summary" style="border-radius:12px;padding:12px 14px">
+        <div><div class="fs-label">💳 Pendiente</div><div class="fs-val">$${totalDeuda.toFixed(2)}</div></div>
+        <div style="text-align:right"><div class="fs-label">${allFiados.filter(f=>!f.paid).length} clientes</div></div>
+      </div>
+      <div style="background:#E8F5E9;border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center">
+        <div><div style="font-size:11px;color:#2E7D32;font-weight:700">✅ Cobrado</div><div style="font-size:18px;font-weight:800;color:#2E7D32;font-family:'DM Mono',monospace">$${totalPagado.toFixed(2)}</div></div>
+        <div style="text-align:right"><div style="font-size:11px;color:#2E7D32">${allFiados.filter(f=>f.paid).length} clientes</div></div>
+      </div>
+    </div>`;
+
   const cont=document.getElementById('fiadoList');
-  if(!fiados.length){cont.innerHTML='<div class="empty"><div class="ei">✅</div><p>¡Sin fiados pendientes!</p></div>';return;}
+  if(!fiados.length){
+    cont.innerHTML='<div class="empty"><div class="ei">${estadoFilter==="pagado"?"✅":"📝"}</div><p>${estadoFilter==="pagado"?"Sin fiados cobrados":"¡Sin fiados pendientes!"}</p></div>';
+    return;
+  }
+
   cont.innerHTML=fiados.map(f=>`
-    <div class="fiado-card">
-      <div class="fc-top"><span class="fc-name">👤 ${f.client}</span><span class="fc-total">$${f.total.toFixed(2)}</span></div>
-      <div class="fc-detail">${f.entries.length} compra${f.entries.length>1?'s':''} · Última: ${f.entries[f.entries.length-1].date}${f.entries[f.entries.length-1].note?' · '+f.entries[f.entries.length-1].note:''}</div>
-      <div class="fc-actions">
+    <div class="fiado-card" style="${f.paid?'border-left-color:#4CAF50;opacity:.8':''}">
+      <div class="fc-top">
+        <div>
+          <span class="fc-name">👤 ${f.client}</span>
+          ${f.paid?'<span style="background:#E8F5E9;color:#2E7D32;font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;margin-left:6px">✅ COBRADO</span>':''}
+        </div>
+        <span class="fc-total" style="${f.paid?'color:#4CAF50':''}">$${f.total.toFixed(2)}</span>
+      </div>
+      <div class="fc-detail">
+        ${f.telefono?`📱 ${f.telefono}`:''} ${f.cedula?`· 🪪 ${f.cedula}`:''}
+        ${(f.telefono||f.cedula)?'<br>':''}
+        ${f.entries.length} compra${f.entries.length>1?'s':''} · Última: ${f.entries[f.entries.length-1].date}
+        ${f.entries[f.entries.length-1].note?' · '+f.entries[f.entries.length-1].note:''}
+        ${f.paid?`<br>✅ Cobrado: ${f.paidDate||''}`:'' }
+      </div>
+      ${!f.paid?`<div class="fc-actions">
         <button class="btn-pay-fiado" onclick="payFiado(${f.id})">✅ Cobrar todo</button>
         <button class="btn-pay-fiado" onclick="payFiadoParcial(${f.id})" style="background:#FFF3E0;color:var(--warn)">💵 Cobro parcial</button>
         <button class="btn-pay-fiado" onclick="openFiadoModal(${f.id})" style="background:#FFEBEE;color:var(--danger)">+ Agregar</button>
-      </div>
+      </div>`:''}
     </div>`).join('');
 }
 function openFiadoModal(id){
+  const existing = id ? getFiados().find(f=>f.id===id) : null;
   openModalContent(`
     <h3>${id?'➕ Agregar al Fiado':'📝 Nuevo Fiado'}</h3>
-    ${!id?`<div class="form-group"><label>Nombre del cliente</label><input id="fNombre" placeholder="Ej: Ana Torres"></div>`:''}
+    ${!id?`
+    <div class="form-group"><label>Nombre del cliente</label><input id="fNombre" placeholder="Ej: Ana Torres" autofocus></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-group"><label>📱 Teléfono</label><input id="fTelefono" placeholder="Ej: 0991234567" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'')"></div>
+      <div class="form-group"><label>🪪 Cédula</label><input id="fCedula" placeholder="Ej: 1712345678" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'')"></div>
+    </div>`:''}
     <div class="form-group"><label>Monto ($)</label><input id="fMonto" type="number" step="0.05" min="0" placeholder="0.00"></div>
     <div class="form-group"><label>Nota</label><input id="fNota" placeholder="Ej: Cobrar el lunes"></div>
     <div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancelar</button><button class="btn-confirm" onclick="saveFiado(${id||'null'})">Guardar</button></div>
@@ -963,10 +1244,35 @@ function saveFiado(id){
   closeModal();renderFiados();showToast('✅ Fiado guardado');
 }
 function payFiado(id){
-  if(!confirm('¿Marcar como cobrado en su totalidad?')) return;
   const fiados=getFiados();const f=fiados.find(x=>x.id===id);
-  f.paid=true;f.paidDate=new Date().toISOString().split('T')[0];
-  DB.set('fiados',fiados);renderFiados();showToast('✅ ¡Fiado cobrado!');
+  if(!f) return;
+  openModalContent(`
+    <h3>✅ Cobrar Fiado Completo</h3>
+    <div style="background:#E8F5E9;border-radius:12px;padding:14px;text-align:center;margin-bottom:16px">
+      <div style="font-size:12px;color:#2E7D32;font-weight:700">TOTAL A COBRAR</div>
+      <div style="font-size:32px;font-weight:800;color:#2E7D32;font-family:'DM Mono',monospace">$${f.total.toFixed(2)}</div>
+      <div style="font-size:12px;color:#555;margin-top:4px">Cliente: ${f.client}</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="confirmarPagoTotal(${id})">✅ Confirmar Cobro</button>
+    </div>
+  `);
+}
+
+function confirmarPagoTotal(id){
+  const fiados=getFiados();const f=fiados.find(x=>x.id===id);
+  if(!f) return;
+  const montoTotal = f.total;
+  f.paid=true;
+  f.paidDate=new Date().toISOString().split('T')[0];
+  DB.set('fiados',fiados);
+  saveFiadoToFirebase(f);
+  closeModal();
+  renderFiados();
+  showToast('✅ ¡Fiado cobrado!');
+  // Show payment receipt
+  showFiadoReceipt(f, montoTotal, 'total');
 }
 function payFiadoParcial(id){
   openModalContent(`
@@ -979,8 +1285,70 @@ function applyPartial(id){
   const m=parseFloat(document.getElementById('pMonto').value)||0;
   if(!m){showToast('⚠️ Ingresa un monto');return;}
   const fiados=getFiados();const f=fiados.find(x=>x.id===id);
-  f.total=Math.max(0,f.total-m);if(f.total===0)f.paid=true;
-  DB.set('fiados',fiados);closeModal();renderFiados();showToast('✅ Cobro parcial aplicado');
+  const deudaAnterior = f.total;
+  f.total=Math.max(0,f.total-m);
+  if(f.total===0) f.paid=true;
+  // Register abono in entries
+  f.entries.push({
+    date: new Date().toISOString().split('T')[0],
+    amount: -m,
+    note: 'Abono $'+m.toFixed(2)
+  });
+  DB.set('fiados',fiados);
+  saveFiadoToFirebase(f);
+  closeModal();
+  renderFiados();
+  showToast('✅ Abono de $'+m.toFixed(2)+' aplicado');
+  // Show payment receipt
+  showFiadoReceipt(f, m, f.total===0?'total':'parcial', deudaAnterior);
+}
+
+function showFiadoReceipt(f, montoPagado, tipo, deudaAnterior){
+  const fecha = new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const hora = new Date().toLocaleTimeString('es-EC',{hour:'2-digit',minute:'2-digit'});
+  const saldoPendiente = tipo==='total' ? 0 : f.total;
+
+  document.getElementById('receiptContent').innerHTML=`
+    <div class="receipt-store-name">TENTEN MICROMERCADO</div>
+    <div class="receipt-tagline">Comprobante de ${tipo==='total'?'Pago Total':'Abono'}</div>
+    <hr class="receipt-divider">
+    <div class="receipt-meta">
+      <div>Fecha: ${fecha} ${hora}</div>
+      <div>Comprobante #${String(Date.now()).slice(-6)}</div>
+    </div>
+    <hr class="receipt-divider">
+    <div style="padding:8px 0">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
+        <span style="font-weight:700">Cliente:</span>
+        <span>${f.client}</span>
+      </div>
+      ${f.telefono?`<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px"><span style="font-weight:700">Teléfono:</span><span>${f.telefono}</span></div>`:''}
+      ${f.cedula?`<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px"><span style="font-weight:700">Cédula:</span><span>${f.cedula}</span></div>`:''}
+    </div>
+    <hr class="receipt-divider">
+    <div style="padding:8px 0">
+      ${deudaAnterior?`<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;color:#555"><span>Deuda anterior:</span><span>$${deudaAnterior.toFixed(2)}</span></div>`:''}
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;color:#2E7D32;font-weight:700"><span>${tipo==='total'?'Pago total:':'Abono:'}</span><span>-$${montoPagado.toFixed(2)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:800;border-top:1px solid #ddd;padding-top:6px;margin-top:6px">
+        <span>Saldo pendiente:</span>
+        <span style="color:${saldoPendiente===0?'#2E7D32':'var(--danger)'}">$${saldoPendiente.toFixed(2)}</span>
+      </div>
+    </div>
+    <div class="receipt-total-row">
+      <span class="receipt-total-label">${tipo==='total'?'✅ PAGADO':'💵 ABONO'}</span>
+      <span class="receipt-total-val" style="color:${tipo==='total'?'#2E7D32':'#1565C0'}">$${montoPagado.toFixed(2)}</span>
+    </div>
+    ${tipo==='parcial'?`
+    <hr class="receipt-divider">
+    <div style="margin-top:20px;border-top:1px solid #333;padding-top:6px;text-align:center;font-size:10px;color:#555">
+      <div style="margin-bottom:30px">Firma del cliente</div>
+      <div>──────────────────────</div>
+      <div style="font-size:9px;margin-top:4px">Abono de $${montoPagado.toFixed(2)} — Saldo: $${saldoPendiente.toFixed(2)}</div>
+      <div style="font-size:9px">Fecha: ${fecha}</div>
+    </div>`:''}
+    <div class="receipt-footer-txt">TENTEN MICROMERCADO<br>${tipo==='total'?'¡Gracias por saldar su deuda! 😊':'Gracias por su abono 😊'}</div>
+  `;
+  document.getElementById('receiptOverlay').classList.add('show');
 }
 
 function showReceipt(sale){
@@ -999,6 +1367,7 @@ function showReceipt(sale){
       <div>Atendido por: ${sale.user}</div>
       <div>Pago: ${payL[sale.paymentMethod]||sale.paymentMethod}</div>
       ${sale.fiadoClient?`<div>Cliente: ${sale.fiadoClient}</div>`:''}
+      ${sale.factNombre?`<hr style="border:none;border-top:1px dashed #bbb;margin:6px 0"><div style="font-weight:700;font-size:11px;color:#333">DATOS DE FACTURACIÓN:</div><div>Nombre: ${sale.factNombre}</div><div>Cédula/RUC: ${sale.factCedula}</div>`:''}
     </div>
     <hr class="receipt-divider">
     <div class="receipt-col-hdr"><span style="flex:1">Producto</span><span style="width:30px;text-align:center">Cant</span><span style="width:52px;text-align:right">P.Unit</span><span style="width:58px;text-align:right">Total</span></div>
@@ -1006,6 +1375,41 @@ function showReceipt(sale){
     ${sale.discount>0?`<div style="display:flex;justify-content:space-between;font-size:11px;color:#888;margin-top:6px;padding-top:6px;border-top:1px dashed #ddd"><span>Descuento (${sale.discountLabel})</span><span>-$${sale.discount.toFixed(2)}</span></div>`:''}
     <div class="receipt-total-row"><span class="receipt-total-label">TOTAL</span><span class="receipt-total-val">$${sale.total.toFixed(2)}</span></div>
     ${changeRow}
+    ${sale.paymentMethod==='credit'?`
+    <hr class="receipt-divider">
+    <div style="font-size:10px;color:#555;margin-bottom:20px">
+      <div style="margin-bottom:4px"><b>Cliente:</b> ${sale.fiadoClient||''}</div>
+      ${sale.fiadoTelefono?`<div><b>Teléfono:</b> ${sale.fiadoTelefono}</div>`:''}
+      ${sale.fiadoCedula?`<div><b>Cédula:</b> ${sale.fiadoCedula}</div>`:''}
+      ${sale.fiadoNote?`<div><b>Nota:</b> ${sale.fiadoNote}</div>`:''}
+    </div>
+    <div style="margin-top:30px;border-top:1px solid #333;padding-top:6px;text-align:center;font-size:10px;color:#555">
+      <div style="margin-bottom:30px">Firma del cliente</div>
+      <div>──────────────────────</div>
+      <div style="font-size:9px;margin-top:4px">Acepto la deuda de <b>$${sale.total.toFixed(2)}</b> con TENTEN MICROMERCADO</div>
+      <div style="font-size:9px">Fecha: ${fecha}</div>
+    </div>`:''}
+    ${sale.clienteId ? (() => {
+      const c = getClientes().find(x=>x.id===sale.clienteId);
+      const cfg = getPuntosConfig();
+      if(!c) return '';
+      const puntos = c.puntos||0;
+      const pct = Math.min(100,(puntos/cfg.metaPuntos)*100).toFixed(0);
+      const listo = puntos >= cfg.metaPuntos;
+      return `
+      <hr class="receipt-divider">
+      <div style="text-align:center;padding:6px 0">
+        <div style="font-size:11px;font-weight:800;color:#555;margin-bottom:4px">⭐ PUNTOS DE FIDELIDAD</div>
+        <div style="font-size:18px;font-weight:800;color:#7B1FA2">${puntos.toFixed(1)} puntos</div>
+        <div style="font-size:10px;color:#888;margin:4px 0">Meta: ${cfg.metaPuntos} puntos para tu premio</div>
+        <div style="background:#f0f0f0;border-radius:6px;height:8px;margin:6px 4px;overflow:hidden">
+          <div style="width:${pct}%;height:100%;background:#7B1FA2;border-radius:6px"></div>
+        </div>
+        <div style="font-size:10px;color:#888">${pct}% completado</div>
+        ${listo?'<div style="font-size:11px;font-weight:800;color:#7B1FA2;margin-top:4px">🎁 ¡TIENES UN PREMIO DISPONIBLE!</div>':''}
+        <div style="font-size:10px;color:#aaa;margin-top:4px">Premio: ${cfg.premio}</div>
+      </div>`;
+    })() : ''}
     <div class="receipt-footer-txt">¡Gracias por su compra!<br>Vuelva pronto 😊<br>─────────────────────<br>TENTEN MICROMERCADO</div>
   `;
   document.getElementById('receiptOverlay').classList.add('show');
@@ -1480,6 +1884,827 @@ function saveProductAndRefreshInv(){
   renderProducts();
   checkStockAlerts();
   showToast('✅ '+name+' agregado en '+category);
+}
+
+function updateClientePuntos(){
+  const clienteId = parseInt(document.getElementById('clienteVentaSelect')?.value)||0;
+  const preview = document.getElementById('clientePuntosPreview');
+  if(!clienteId||!preview){ if(preview) preview.style.display='none'; return; }
+  const config = getConfigPuntos();
+  const total = getCartTotal();
+  const puntos = (total / (config.dolarPorPunto||2)).toFixed(1);
+  preview.style.display='block';
+  preview.textContent='⭐ Ganará '+puntos+' puntos con esta compra';
+}
+
+function populateClientesSelect(){
+  const sel = document.getElementById('clienteVentaSelect');
+  if(!sel) return;
+  const clientes = getClientes().sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  sel.innerHTML='<option value="">Sin cliente</option>'+clientes.map(c=>`<option value="${c.id}">${c.nombre}${c.puntos>0?' ('+c.puntos.toFixed(1)+' pts)':''}</option>`).join('');
+}
+
+function cobrarConFactura(){
+  if(!Object.keys(cart).length){showToast('⚠️ Agrega productos primero');return;}
+  const items=Object.values(cart);
+  const sub=items.reduce((s,i)=>s+(i.price*i.qty),0);
+  const disc=getDiscount(sub);
+  const total=sub-disc;
+  openModalContent(`
+    <h3>🧾 Datos para Factura</h3>
+    <div style="background:#E3F2FD;border-radius:12px;padding:12px;margin-bottom:16px;text-align:center">
+      <div style="font-size:12px;color:#1565C0;font-weight:700;margin-bottom:4px">TOTAL A FACTURAR</div>
+      <div style="font-size:28px;font-weight:800;color:#1565C0;font-family:'DM Mono',monospace">$${total.toFixed(2)}</div>
+    </div>
+    <div class="form-group">
+      <label>Nombre completo</label>
+      <input id="factNombre" placeholder="Ej: Juan Carlos Pérez" autofocus>
+    </div>
+    <div class="form-group">
+      <label>Cédula / RUC</label>
+      <input id="factCedula" placeholder="Ej: 1712345678" maxlength="13" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="confirmarConFactura()">✅ Cobrar con Factura</button>
+    </div>
+  `);
+}
+
+function confirmarConFactura(){
+  const nombre = document.getElementById('factNombre').value.trim();
+  const cedula = document.getElementById('factCedula').value.trim();
+  if(!nombre){showToast('⚠️ Ingresa el nombre del cliente');return;}
+  if(!cedula||cedula.length<10){showToast('⚠️ Ingresa una cédula válida (10 dígitos)');return;}
+  closeModal();
+  // Store client data for receipt
+  pendingFactura = {nombre, cedula};
+  cobrar();
+}
+
+let pendingFactura = null;
+
+function anularVenta(id){
+  openModalContent(`
+    <h3>🚫 Anular Venta</h3>
+    <div style="background:#FFEBEE;border-radius:12px;padding:14px;margin-bottom:16px;text-align:center">
+      <div style="font-size:13px;color:var(--danger);font-weight:700">⚠️ La venta quedará marcada como anulada</div>
+      <div style="font-size:12px;color:#888;margin-top:4px">El stock se restaurará automáticamente</div>
+    </div>
+    <div class="form-group">
+      <label>Motivo de anulación</label>
+      <input id="motivoAnulacion" placeholder="Ej: Error en producto, devolución..." autofocus>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button style="flex:1;padding:13px;border-radius:12px;background:var(--danger);color:white;border:none;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif" onclick="confirmarAnulacion(${id})">🚫 Anular</button>
+    </div>
+  `);
+}
+
+async function confirmarAnulacion(id){
+  const motivo = document.getElementById('motivoAnulacion').value.trim() || 'Sin motivo';
+  const sales = getSales();
+  const sale = sales.find(s=>s.id===id);
+  if(!sale){ showToast('⚠️ Venta no encontrada'); closeModal(); return; }
+  sale.anulada = true;
+  sale.anuladaPor = currentUser.name;
+  sale.anuladaFecha = new Date().toLocaleDateString('es-EC');
+  sale.anuladaMotivo = motivo;
+  // Restore stock
+  const prods = getProducts();
+  sale.items.forEach(si=>{
+    const p = prods.find(x=>x.id===si.id);
+    if(p && p.stock >= 0) p.stock += si.qty;
+  });
+  DB.set('sales', sales);
+  DB.set('products', prods);
+  await fbSave('sales', sale.id, sale);
+  prods.forEach(p=>fbSave('products', p.id, p));
+  closeModal();
+  renderHistorial();
+  renderProducts();
+  checkStockAlerts();
+  showToast('🚫 Venta anulada — stock restaurado');
+}
+
+function setHoyAnuladas(){
+  document.getElementById('anuladasFechaFilter').value = new Date().toISOString().split('T')[0];
+  renderReportes();
+}
+
+function renderReportes(){
+  const today = new Date().toISOString().split('T')[0];
+  const allSales = getSales();
+
+  // --- ANULADAS ---
+  const anuladasFecha = document.getElementById('anuladasFechaFilter').value || today;
+  const anuladas = allSales.filter(s=>s.anulada && s.date===anuladasFecha);
+  const totalAnulado = anuladas.reduce((s,v)=>s+v.total,0);
+
+  document.getElementById('anuladasResumen').innerHTML = `
+    <div style="background:#FFEBEE;border-radius:12px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center">
+      <div><div style="font-size:11px;color:#999">Ventas anuladas ${anuladasFecha}</div><div style="font-size:20px;font-weight:800;color:var(--danger);font-family:'DM Mono',monospace">${anuladas.length} ventas</div></div>
+      <div style="text-align:right"><div style="font-size:11px;color:#999">Total anulado</div><div style="font-size:20px;font-weight:800;color:var(--danger);font-family:'DM Mono',monospace">$${totalAnulado.toFixed(2)}</div></div>
+    </div>`;
+
+  const anuladasCont = document.getElementById('anuladasList');
+  if(!anuladas.length){
+    anuladasCont.innerHTML='<div class="empty"><div class="ei">✅</div><p>Sin ventas anuladas en esta fecha</p></div>';
+  } else {
+    anuladasCont.innerHTML = anuladas.map(s=>`
+      <div class="sale-card" style="border-left-color:var(--danger);background:#FFFAFA">
+        <div class="sc-top">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="sc-hora">🕐 ${s.time}</span>
+            <span class="sc-user">${s.user}</span>
+          </div>
+          <span class="sc-total" style="text-decoration:line-through;color:#999">$${s.total.toFixed(2)}</span>
+        </div>
+        <div class="sc-items">${s.items.map(i=>`${i.qty}× ${i.name}`).join(' · ')}</div>
+        <div style="font-size:11px;color:#999;margin-top:6px;padding-top:6px;border-top:1px dashed #eee">
+          🚫 Anulada por: <b>${s.anuladaPor||'Admin'}</b> — Motivo: ${s.anuladaMotivo||'Sin motivo'}
+        </div>
+      </div>`).join('');
+  }
+
+  // --- HISTORIAL VENTAS ---
+  const fechaInicio = document.getElementById('reporteFechaInicio').value || today;
+  const fechaFin = document.getElementById('reporteFechaFin').value || today;
+
+  const ventas = allSales.filter(s=>{
+    if(s.anulada) return false;
+    return s.date >= fechaInicio && s.date <= fechaFin;
+  });
+
+  const totalVentas = ventas.reduce((s,v)=>s+v.total,0);
+  const nVentas = ventas.length;
+
+  document.getElementById('reporteResumen').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+      <div class="kpi-card accent"><div class="kpi-label">💰 Total</div><div class="kpi-val">$${totalVentas.toFixed(2)}</div></div>
+      <div class="kpi-card"><div class="kpi-label">🛒 Ventas</div><div class="kpi-val">${nVentas}</div></div>
+      <div class="kpi-card"><div class="kpi-label">📊 Promedio</div><div class="kpi-val">$${nVentas?( totalVentas/nVentas).toFixed(2):'0.00'}</div></div>
+    </div>`;
+
+  const reporteCont = document.getElementById('reporteList');
+  if(!ventas.length){
+    reporteCont.innerHTML='<div class="empty"><div class="ei">📋</div><p>Sin ventas en este período</p></div>';
+  } else {
+    const payL={cash:'💵 Efectivo',transfer:'📱 Transfer.',card:'💳 Tarjeta',credit:'📝 Fiado'};
+    reporteCont.innerHTML = ventas.map(s=>`
+      <div class="sale-card">
+        <div class="sc-top">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">${s.date} ${s.time}</span>
+            <span class="sc-user">${s.user}</span>
+            ${s.factNombre?`<span style="font-size:10px;background:#E3F2FD;color:#1565C0;padding:2px 8px;border-radius:20px;font-weight:700">🧾 ${s.factNombre}</span>`:''}
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="sc-total">$${s.total.toFixed(2)}</span>
+            <button onclick='showReceipt(${JSON.stringify(s)})' style="background:#FFF3CD;border:none;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer;color:var(--g1)">🖨️</button>
+          </div>
+        </div>
+        <div class="sc-items">${s.items.map(i=>`${i.qty}× ${i.name}`).join(' · ')}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">${payL[s.paymentMethod]||s.paymentMethod||''}</div>
+      </div>`).join('');
+  }
+}
+
+function exportHistorialExcel(){
+  const today = new Date().toISOString().split('T')[0];
+  const fechaInicio = document.getElementById('reporteFechaInicio').value || today;
+  const fechaFin = document.getElementById('reporteFechaFin').value || today;
+  const allSales = getSales();
+  const ventas = allSales.filter(s=> !s.anulada && s.date>=fechaInicio && s.date<=fechaFin);
+
+  if(!ventas.length){ showToast('⚠️ Sin ventas en ese período'); return; }
+
+  const rows = [];
+  ventas.forEach(s=>{
+    s.items.forEach(i=>{
+      rows.push({
+        'Fecha': s.date,
+        'Hora': s.time,
+        'Comprobante #': String(s.id).slice(-6),
+        'Cajero': s.user,
+        'Producto': i.name,
+        'Cantidad': i.qty,
+        'Precio Unit ($)': i.price.toFixed(2),
+        'Subtotal ($)': i.subtotal.toFixed(2),
+        'Descuento ($)': s.discount>0?s.discount.toFixed(2):'',
+        'Total Venta ($)': s.total.toFixed(2),
+        'Método Pago': {cash:'Efectivo',transfer:'Transferencia',card:'Tarjeta',credit:'Fiado'}[s.paymentMethod]||s.paymentMethod,
+        'Cliente': s.factNombre||s.fiadoClient||'',
+        'Cédula/RUC': s.factCedula||'',
+      });
+    });
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{wch:12},{wch:8},{wch:14},{wch:12},{wch:20},{wch:8},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:20},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Ventas');
+
+  // Summary sheet
+  const totalVentas = ventas.reduce((s,v)=>s+v.total,0);
+  const summary = [
+    ['TENTEN MICROMERCADO — Reporte de Ventas'],
+    ['Período:', fechaInicio+' al '+fechaFin],
+    ['Total ventas:', ventas.length],
+    ['Total recaudado ($):', totalVentas.toFixed(2)],
+    ['Promedio por venta ($):', (totalVentas/ventas.length).toFixed(2)],
+    ['Fecha exportación:', new Date().toLocaleDateString('es-EC')],
+  ];
+  const ws2 = XLSX.utils.aoa_to_sheet(summary);
+  ws2['!cols'] = [{wch:25},{wch:20}];
+  XLSX.utils.book_append_sheet(wb, ws2, 'Resumen');
+
+  XLSX.writeFile(wb, 'TENTEN_Ventas_'+fechaInicio+'_'+fechaFin+'.xlsx');
+  showToast('✅ Excel descargado');
+}
+
+function exportFiadosExcel(){
+  const estadoFilter = document.getElementById('fiadoEstadoFilter')?.value || 'todos';
+  const fechaFilter = document.getElementById('fiadoFechaFilter')?.value || '';
+  let fiados = getFiados();
+
+  if(estadoFilter==='pendiente') fiados = fiados.filter(f=>!f.paid);
+  else if(estadoFilter==='pagado') fiados = fiados.filter(f=>f.paid);
+  if(fechaFilter) fiados = fiados.filter(f=>f.entries.some(e=>e.date===fechaFilter));
+
+  if(!fiados.length){ showToast('⚠️ Sin fiados para exportar'); return; }
+
+  const rows = [];
+  fiados.forEach(f=>{
+    f.entries.forEach(e=>{
+      rows.push({
+        'Cliente': f.client,
+        'Teléfono': f.telefono||'',
+        'Cédula': f.cedula||'',
+        'Fecha': e.date,
+        'Monto ($)': e.amount.toFixed(2),
+        'Nota': e.note||'',
+        'Estado': f.paid?'✅ Cobrado':'💳 Pendiente',
+        'Total Deuda ($)': f.total.toFixed(2),
+        'Fecha Cobro': f.paidDate||'',
+      });
+    });
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols']=[{wch:20},{wch:14},{wch:14},{wch:12},{wch:12},{wch:20},{wch:14},{wch:14},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Fiados');
+
+  const totalPendiente = getFiados().filter(f=>!f.paid).reduce((s,f)=>s+f.total,0);
+  const summary=[
+    ['TENTEN MICROMERCADO — Reporte de Fiados'],
+    ['Fecha exportación:', new Date().toLocaleDateString('es-EC')],
+    ['Filtro estado:', estadoFilter],
+    ['Filtro fecha:', fechaFilter||'Todas'],
+    ['Total pendiente ($):', totalPendiente.toFixed(2)],
+    ['Clientes pendientes:', getFiados().filter(f=>!f.paid).length],
+  ];
+  const ws2=XLSX.utils.aoa_to_sheet(summary);
+  ws2['!cols']=[{wch:25},{wch:20}];
+  XLSX.utils.book_append_sheet(wb, ws2, 'Resumen');
+
+  const fecha = new Date().toISOString().split('T')[0];
+  XLSX.writeFile(wb, 'TENTEN_Fiados_'+fecha+'.xlsx');
+  showToast('✅ Excel de fiados descargado');
+}
+
+// ============================================================
+// CARTERA DE CLIENTES
+// ============================================================
+function renderClientes(){
+  const clientes = getClientes();
+  const config = getConfigPuntos();
+  const buscar = (document.getElementById('clienteBuscar')?.value||'').toLowerCase().trim();
+  const orden = document.getElementById('clienteOrdenFilter')?.value || 'puntos';
+
+  // KPIs
+  const totalClientes = clientes.length;
+  const listosCanjear = clientes.filter(c=>c.puntos>=(config.metaPuntos||100)).length;
+  const totalPuntos = clientes.reduce((s,c)=>s+c.puntos,0);
+  const mejorCliente = clientes.sort((a,b)=>b.totalCompras-a.totalCompras)[0];
+
+  document.getElementById('clientesKpis').innerHTML=`
+    <div class="kpi-card accent"><div class="kpi-label">👥 Total clientes</div><div class="kpi-val">${totalClientes}</div><div class="kpi-sub">registrados</div></div>
+    <div class="kpi-card"><div class="kpi-label">🎁 Listos canjear</div><div class="kpi-val" style="color:var(--acc)">${listosCanjear}</div><div class="kpi-sub">meta: ${config.metaPuntos} pts</div></div>
+    <div class="kpi-card"><div class="kpi-label">⭐ Total puntos</div><div class="kpi-val" style="color:#F59E0B">${totalPuntos.toFixed(1)}</div><div class="kpi-sub">acumulados</div></div>
+    <div class="kpi-card"><div class="kpi-label">🏆 Mejor cliente</div><div class="kpi-val" style="font-size:14px;color:var(--g1)">${mejorCliente?mejorCliente.nombre.split(' ')[0]:'—'}</div><div class="kpi-sub">${mejorCliente?'$'+mejorCliente.totalCompras.toFixed(2):''}</div></div>
+  `;
+
+  let filtered = [...clientes];
+
+  // Search
+  if(buscar){
+    filtered = filtered.filter(c=>
+      c.nombre.toLowerCase().includes(buscar)||
+      (c.cedula||'').includes(buscar)||
+      (c.telefono||'').includes(buscar)
+    );
+  }
+
+  // Order
+  if(orden==='puntos') filtered.sort((a,b)=>b.puntos-a.puntos);
+  else if(orden==='compras') filtered.sort((a,b)=>b.totalCompras-a.totalCompras);
+  else if(orden==='nombre') filtered.sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  else if(orden==='canje') filtered = filtered.filter(c=>c.puntos>=(config.metaPuntos||100)).sort((a,b)=>b.puntos-a.puntos);
+
+  const cont = document.getElementById('clientesList');
+  if(!filtered.length){
+    cont.innerHTML='<div class="empty"><div class="ei">👥</div><p>Sin clientes registrados</p></div>';
+    return;
+  }
+
+  cont.innerHTML = filtered.map(c=>{
+    const meta = config.metaPuntos||100;
+    const pct = Math.min((c.puntos/meta)*100, 100).toFixed(0);
+    const listo = c.puntos >= meta;
+    return `<div style="background:white;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:var(--shadow);border-left:4px solid ${listo?'var(--acc)':'var(--border)'}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-size:15px;font-weight:800">${listo?'🎁 ':''} ${c.nombre}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">
+            ${c.telefono?'📱 '+c.telefono:''}
+            ${c.cedula?' · 🪪 '+c.cedula:''}
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">
+            🛒 ${c.numCompras||0} compras · 💰 $${(c.totalCompras||0).toFixed(2)} total
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:20px;font-weight:800;color:${listo?'var(--acc)':'var(--g1)'};font-family:'DM Mono',monospace">${c.puntos.toFixed(1)}</div>
+          <div style="font-size:10px;color:var(--muted)">puntos</div>
+        </div>
+      </div>
+      <!-- Progress bar -->
+      <div style="margin-top:10px">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:4px">
+          <span>${listo?'🎁 ¡Listo para canjear!':'Progreso hacia premio'}</span>
+          <span>${c.puntos.toFixed(1)} / ${meta} pts</span>
+        </div>
+        <div style="background:var(--bg);border-radius:6px;height:10px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${listo?'linear-gradient(90deg,var(--acc),#F59E0B)':'linear-gradient(90deg,var(--g1),var(--g2))'};border-radius:6px;transition:width .5s"></div>
+        </div>
+      </div>
+      <!-- Actions -->
+      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+        <button onclick="openClienteModal(${c.id})" style="background:#E3F2FD;color:#1565C0;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">✏️ Editar</button>
+        <button onclick="ajustarPuntos(${c.id})" style="background:#FFF3E0;color:var(--warn);border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">⭐ Puntos</button>
+        ${listo?`<button onclick="canjearPremio(${c.id})" style="background:var(--acc);color:#333;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:800;cursor:pointer">🎁 Canjear</button>`:''}
+        <button onclick="verHistorialCliente(${c.id})" style="background:#F3E5F5;color:#6A1B9A;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">📋 Historial</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openClienteModal(id){
+  const c = id ? getClientes().find(x=>x.id===id) : {id:null,nombre:'',telefono:'',cedula:'',email:'',puntos:0,totalCompras:0,numCompras:0,fechaRegistro:new Date().toISOString().split('T')[0]};
+  openModalContent(`
+    <h3>${id?'✏️ Editar Cliente':'👤 Nuevo Cliente'}</h3>
+    <div class="form-group"><label>Nombre completo</label><input id="cNombre" value="${c.nombre}" placeholder="Ej: María García" autofocus></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-group"><label>📱 Teléfono</label><input id="cTelefono" value="${c.telefono||''}" placeholder="0991234567" maxlength="10"></div>
+      <div class="form-group"><label>🪪 Cédula</label><input id="cCedula" value="${c.cedula||''}" placeholder="1712345678" maxlength="10"></div>
+    </div>
+    <div class="form-group"><label>📧 Correo (opcional)</label><input id="cEmail" value="${c.email||''}" placeholder="correo@gmail.com" type="email"></div>
+    ${id?`<div style="background:#FFF3E0;border-radius:10px;padding:10px;font-size:13px;margin-bottom:8px">⭐ Puntos actuales: <b>${c.puntos.toFixed(1)}</b> | 🛒 Compras: <b>${c.numCompras}</b> | 💰 Total: <b>$${c.totalCompras.toFixed(2)}</b></div>`:''}
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="saveCliente(${id||'null'})">💾 Guardar</button>
+    </div>
+  `);
+}
+
+function saveCliente(id){
+  const nombre = document.getElementById('cNombre').value.trim();
+  const telefono = document.getElementById('cTelefono').value.trim();
+  const cedula = document.getElementById('cCedula').value.trim();
+  const email = document.getElementById('cEmail').value.trim();
+  if(!nombre){showToast('⚠️ Ingresa el nombre');return;}
+  const clientes = getClientes();
+  if(id){
+    const c = clientes.find(x=>x.id===id);
+    Object.assign(c,{nombre,telefono,cedula,email});
+  } else {
+    clientes.push({id:Date.now(),nombre,telefono,cedula,email,puntos:0,totalCompras:0,numCompras:0,fechaRegistro:new Date().toISOString().split('T')[0],historial:[]});
+  }
+  DB.set('clientes',clientes);
+  fbSave('clientes_pos', id||clientes[clientes.length-1].id, id?clientes.find(x=>x.id===id):clientes[clientes.length-1]);
+  closeModal();renderClientes();showToast('✅ Cliente guardado');
+}
+
+function ajustarPuntos(id){
+  const c = getClientes().find(x=>x.id===id);
+  if(!c) return;
+  openModalContent(`
+    <h3>⭐ Ajustar Puntos — ${c.nombre}</h3>
+    <div style="text-align:center;background:#FFF3E0;border-radius:12px;padding:14px;margin-bottom:16px">
+      <div style="font-size:12px;color:var(--warn);font-weight:700">PUNTOS ACTUALES</div>
+      <div style="font-size:36px;font-weight:800;color:var(--acc);font-family:'DM Mono',monospace">${c.puntos.toFixed(1)}</div>
+    </div>
+    <div class="form-group"><label>Puntos a agregar o restar (ej: 5 o -3)</label><input id="ajustePuntos" type="number" step="0.5" placeholder="0" autofocus></div>
+    <div class="form-group"><label>Motivo</label><input id="ajusteMotivo" placeholder="Ej: Promoción especial"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="confirmarAjustePuntos(${id})">✅ Aplicar</button>
+    </div>
+  `);
+}
+
+function confirmarAjustePuntos(id){
+  const ajuste = parseFloat(document.getElementById('ajustePuntos').value)||0;
+  if(!ajuste){showToast('⚠️ Ingresa los puntos');return;}
+  const clientes = getClientes();
+  const c = clientes.find(x=>x.id===id);
+  c.puntos = Math.max(0, c.puntos + ajuste);
+  if(!c.historial) c.historial=[];
+  c.historial.push({fecha:new Date().toISOString().split('T')[0],tipo:'ajuste',puntos:ajuste,motivo:document.getElementById('ajusteMotivo').value||'Ajuste manual'});
+  DB.set('clientes',clientes);
+  fbSave('clientes_pos', c.id, c);
+  closeModal();renderClientes();
+  showToast((ajuste>0?'✅ +':'⚠️ ')+ajuste+' puntos aplicados a '+c.nombre);
+  // Check if reached goal
+  const config = getConfigPuntos();
+  if(c.puntos >= (config.metaPuntos||100)){
+    setTimeout(()=>showToast('🎁 ¡'+c.nombre+' llegó a la meta! Puede canjear su premio'),1000);
+  }
+}
+
+function canjearPremio(id){
+  const c = getClientes().find(x=>x.id===id);
+  const config = getConfigPuntos();
+  if(!c) return;
+  openModalContent(`
+    <h3>🎁 Canjear Premio</h3>
+    <div style="text-align:center;background:linear-gradient(135deg,#F59E0B,#F39C12);border-radius:16px;padding:20px;margin-bottom:16px;color:white">
+      <div style="font-size:40px;margin-bottom:8px">🎁</div>
+      <div style="font-size:18px;font-weight:800">${c.nombre}</div>
+      <div style="font-size:14px;opacity:.9;margin-top:4px">${c.puntos.toFixed(1)} puntos acumulados</div>
+      <div style="font-size:16px;font-weight:800;margin-top:8px;background:rgba(255,255,255,.2);border-radius:10px;padding:8px">Premio: ${config.premio||'Premio sorpresa'}</div>
+    </div>
+    <div style="background:#FFF3E0;border-radius:10px;padding:10px;font-size:13px;margin-bottom:14px">
+      ⚠️ Se descontarán <b>${config.metaPuntos} puntos</b> de la cuenta del cliente.
+      ${c.puntos>config.metaPuntos?`<br>Le quedarán: <b>${(c.puntos-config.metaPuntos).toFixed(1)} puntos</b>`:''}
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button style="flex:1;padding:13px;border-radius:12px;background:var(--acc);color:#333;border:none;font-size:14px;font-weight:800;cursor:pointer;font-family:'DM Sans',sans-serif" onclick="confirmarCanje(${id})">🎁 Confirmar Canje</button>
+    </div>
+  `);
+}
+
+function confirmarCanje(id){
+  const clientes = getClientes();
+  const c = clientes.find(x=>x.id===id);
+  const config = getConfigPuntos();
+  const meta = config.metaPuntos||100;
+  c.puntos = Math.max(0, c.puntos - meta);
+  if(!c.historial) c.historial=[];
+  c.historial.push({fecha:new Date().toISOString().split('T')[0],tipo:'canje',puntos:-meta,motivo:'Canje de premio: '+config.premio});
+  DB.set('clientes',clientes);
+  fbSave('clientes_pos', c.id, c);
+  closeModal();renderClientes();
+  showToast('🎁 ¡Premio canjeado para '+c.nombre+'!');
+}
+
+function verHistorialCliente(id){
+  const c = getClientes().find(x=>x.id===id);
+  if(!c) return;
+  const hist = (c.historial||[]).slice(-10).reverse();
+  openModalContent(`
+    <h3>📋 Historial — ${c.nombre}</h3>
+    <div style="background:#F8F9FA;border-radius:12px;padding:12px;margin-bottom:14px;font-size:13px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span>⭐ Puntos actuales:</span><b>${c.puntos.toFixed(1)}</b>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span>🛒 Total compras:</span><b>${c.numCompras}</b>
+      </div>
+      <div style="display:flex;justify-content:space-between">
+        <span>💰 Total gastado:</span><b>$${c.totalCompras.toFixed(2)}</b>
+      </div>
+    </div>
+    ${hist.length?hist.map(h=>`
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px">
+        <div>
+          <div style="font-weight:700">${h.tipo==='compra'?'🛒':h.tipo==='canje'?'🎁':'⭐'} ${h.motivo||h.tipo}</div>
+          <div style="color:var(--muted)">${h.fecha}</div>
+        </div>
+        <span style="font-weight:800;color:${h.puntos>0?'var(--g1)':'var(--danger)'};font-family:'DM Mono',monospace">${h.puntos>0?'+':''}${h.puntos} pts</span>
+      </div>`).join(''):'<div style="color:var(--muted);text-align:center;padding:20px">Sin historial aún</div>'}
+    <div class="modal-actions"><button class="btn-confirm" onclick="closeModal()">Cerrar</button></div>
+  `);
+}
+
+function openConfigPuntos(){
+  const config = getConfigPuntos();
+  openModalContent(`
+    <h3>⚙️ Configurar Sistema de Puntos</h3>
+    <div style="background:#E3F2FD;border-radius:12px;padding:12px;margin-bottom:14px;font-size:13px;color:#1565C0">
+      💡 Con la configuración actual: por cada <b>$2</b> de compra el cliente gana <b>1 punto</b>
+    </div>
+    <div class="form-group">
+      <label>💵 Dólares necesarios para ganar 1 punto</label>
+      <input id="cfgDolar" type="number" step="0.5" min="0.5" value="${config.dolarPorPunto||2}" placeholder="2">
+    </div>
+    <div class="form-group">
+      <label>🎯 Meta de puntos para ganar el premio</label>
+      <input id="cfgMeta" type="number" min="1" value="${config.metaPuntos||100}" placeholder="100">
+    </div>
+    <div class="form-group">
+      <label>🎁 Descripción del premio</label>
+      <input id="cfgPremio" value="${config.premio||'Premio sorpresa'}" placeholder="Ej: Producto gratis, descuento 10%">
+    </div>
+    <div style="background:#E8F5E9;border-radius:10px;padding:10px;font-size:12px;color:#2E7D32;margin-bottom:14px">
+      ✅ Ejemplo: Con meta de ${config.metaPuntos} puntos, el cliente necesita gastar <b>$${((config.metaPuntos||100)*(config.dolarPorPunto||2)).toFixed(0)}</b> para ganar el premio
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="saveConfigPuntos()">💾 Guardar</button>
+    </div>
+  `);
+}
+
+function saveConfigPuntos(){
+  const dolarPorPunto = parseFloat(document.getElementById('cfgDolar').value)||2;
+  const metaPuntos = parseInt(document.getElementById('cfgMeta').value)||100;
+  const premio = document.getElementById('cfgPremio').value.trim()||'Premio sorpresa';
+  DB.set('configPuntos',{dolarPorPunto,metaPuntos,premio});
+  closeModal();renderClientes();showToast('✅ Configuración de puntos guardada');
+}
+
+// Add points when sale is finalized
+function addPuntosCliente(sale){
+  if(!sale||!sale.clienteId) return;
+  const clientes = getClientes();
+  const c = clientes.find(x=>x.id===sale.clienteId);
+  if(!c) return;
+  const config = getConfigPuntos();
+  const puntos = sale.total / (config.dolarPorPunto||2);
+  c.puntos = (c.puntos||0) + puntos;
+  c.totalCompras = (c.totalCompras||0) + sale.total;
+  c.numCompras = (c.numCompras||0) + 1;
+  if(!c.historial) c.historial=[];
+  c.historial.push({fecha:sale.date,tipo:'compra',puntos:puntos,motivo:'Compra $'+sale.total.toFixed(2)});
+  DB.set('clientes',clientes);
+  fbSave('clientes_pos', c.id, c);
+  // Alert if reached goal
+  const meta = config.metaPuntos||100;
+  if(c.puntos >= meta && (c.puntos - puntos) < meta){
+    setTimeout(()=>{
+      showToast('🎁 ¡'+c.nombre+' llegó a '+meta+' puntos! Puede canjear su premio 🎉');
+    }, 1500);
+  }
+}
+
+// ============================================================
+// CARTERA DE CLIENTES + PUNTOS
+// ============================================================
+function openPuntosConfig(){
+  const cfg = getPuntosConfig();
+  openModalContent(`
+    <h3>⚙️ Configurar Sistema de Puntos</h3>
+    <div style="background:#F3E5F5;border-radius:12px;padding:12px;margin-bottom:14px;font-size:12px;color:#7B1FA2;font-weight:700">
+      💡 Ejemplo: Si pones $2 = 1 punto y meta 50 puntos, el cliente necesita comprar $100 para ganar el premio
+    </div>
+    <div class="form-group">
+      <label>💵 Cada cuántos dólares se gana 1 punto</label>
+      <input id="cfgDolar" type="number" step="0.5" min="0.5" value="${cfg.dolarPorPunto}" placeholder="Ej: 1">
+    </div>
+    <div class="form-group">
+      <label>🎯 Puntos necesarios para el premio</label>
+      <input id="cfgMeta" type="number" min="1" value="${cfg.metaPuntos}" placeholder="Ej: 100">
+    </div>
+    <div class="form-group">
+      <label>🎁 Premio a entregar</label>
+      <input id="cfgPremio" value="${cfg.premio}" placeholder="Ej: Producto gratis a elegir">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="savePuntosConfig()">💾 Guardar</button>
+    </div>
+  `);
+}
+
+function savePuntosConfig(){
+  const dolarPorPunto = parseFloat(document.getElementById('cfgDolar').value)||1;
+  const metaPuntos = parseInt(document.getElementById('cfgMeta').value)||100;
+  const premio = document.getElementById('cfgPremio').value.trim()||'Producto gratis';
+  DB.set('puntosConfig', {dolarPorPunto, metaPuntos, premio});
+  closeModal();
+  showToast('✅ Configuración guardada');
+  renderClientes();
+}
+
+function openClienteModal(id){
+  const clientes = getClientes();
+  const c = id ? clientes.find(x=>x.id===id) : {id:null,nombre:'',telefono:'',cedula:'',puntos:0,totalCompras:0,visitas:0};
+  openModalContent(`
+    <h3>${id?'✏️ Editar Cliente':'➕ Nuevo Cliente'}</h3>
+    <div class="form-group"><label>👤 Nombre completo</label><input id="cNombre" value="${c.nombre}" placeholder="Ej: Ana Torres" autofocus></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-group"><label>📱 Teléfono</label><input id="cTelefono" value="${c.telefono||''}" placeholder="0991234567" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'')"></div>
+      <div class="form-group"><label>🪪 Cédula / RUC</label><input id="cCedula" value="${c.cedula||''}" placeholder="1712345678" maxlength="13" oninput="this.value=this.value.replace(/[^0-9]/g,'')"></div>
+    </div>
+    ${id?`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-group"><label>⭐ Puntos actuales</label><input id="cPuntos" type="number" value="${c.puntos||0}" min="0"></div>
+      <div class="form-group"><label>🛒 Total compras ($)</label><input id="cCompras" type="number" value="${c.totalCompras||0}" min="0" step="0.01"></div>
+    </div>`:''}
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="saveCliente(${id||'null'})">💾 Guardar</button>
+    </div>
+  `);
+}
+
+function saveCliente(id){
+  const nombre = document.getElementById('cNombre').value.trim();
+  const telefono = document.getElementById('cTelefono').value.trim();
+  const cedula = document.getElementById('cCedula').value.trim();
+  if(!nombre){showToast('⚠️ Ingresa el nombre');return;}
+  const clientes = getClientes();
+  if(id){
+    const c = clientes.find(x=>x.id===id);
+    c.nombre=nombre; c.telefono=telefono; c.cedula=cedula;
+    c.puntos=parseFloat(document.getElementById('cPuntos').value)||0;
+    c.totalCompras=parseFloat(document.getElementById('cCompras').value)||0;
+  } else {
+    clientes.push({id:Date.now(),nombre,telefono,cedula,puntos:0,totalCompras:0,visitas:0,fechaRegistro:new Date().toISOString().split('T')[0]});
+  }
+  DB.set('clientes', clientes);
+  fbSave('clientes_db', 'all', clientes);
+  closeModal();
+  renderClientes();
+  showToast('✅ Cliente guardado');
+}
+
+function deleteCliente(id){
+  if(!confirm('¿Eliminar cliente?')) return;
+  DB.set('clientes', getClientes().filter(c=>c.id!==id));
+  renderClientes();
+  showToast('🗑️ Cliente eliminado');
+}
+
+function canjearPremio(id){
+  const cfg = getPuntosConfig();
+  const clientes = getClientes();
+  const c = clientes.find(x=>x.id===id);
+  if(!c) return;
+  openModalContent(`
+    <h3>🎁 Canjear Premio</h3>
+    <div style="background:#F3E5F5;border-radius:12px;padding:14px;text-align:center;margin-bottom:16px">
+      <div style="font-size:36px;margin-bottom:8px">🎁</div>
+      <div style="font-size:16px;font-weight:800;color:#7B1FA2">${cfg.premio}</div>
+      <div style="font-size:13px;color:#888;margin-top:4px">Cliente: ${c.nombre}</div>
+      <div style="font-size:13px;color:#7B1FA2;font-weight:700;margin-top:4px">⭐ ${c.puntos} puntos</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button style="flex:1;padding:13px;border-radius:12px;background:#7B1FA2;color:white;border:none;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif" onclick="confirmarCanje(${id})">🎁 Confirmar Canje</button>
+    </div>
+  `);
+}
+
+function confirmarCanje(id){
+  const cfg = getPuntosConfig();
+  const clientes = getClientes();
+  const c = clientes.find(x=>x.id===id);
+  c.puntos = c.puntos - cfg.metaPuntos;
+  if(c.puntos < 0) c.puntos = 0;
+  c.ultimoCanje = new Date().toISOString().split('T')[0];
+  DB.set('clientes', clientes);
+  fbSave('clientes_db', 'all', clientes);
+  closeModal();
+  renderClientes();
+  showToast('🎁 Premio canjeado para '+c.nombre);
+}
+
+function sumarPuntosCliente(clienteId, totalVenta){
+  const cfg = getPuntosConfig();
+  const clientes = getClientes();
+  const c = clientes.find(x=>x.id===clienteId);
+  if(!c) return;
+  const puntosGanados = totalVenta / cfg.dolarPorPunto;
+  c.puntos = (c.puntos||0) + puntosGanados;
+  c.totalCompras = (c.totalCompras||0) + totalVenta;
+  c.visitas = (c.visitas||0) + 1;
+  c.ultimaCompra = new Date().toISOString().split('T')[0];
+  DB.set('clientes', clientes);
+  fbSave('clientes_db', 'all', clientes);
+  // Alert if reached goal
+  if(c.puntos >= cfg.metaPuntos){
+    showToast('🎉 ¡'+c.nombre+' llegó a '+Math.floor(c.puntos)+' puntos! Premio disponible 🎁');
+  }
+  return puntosGanados;
+}
+
+function renderClientes(){
+  const cfg = getPuntosConfig();
+  let clientes = getClientes();
+  const buscar = (document.getElementById('clienteBuscar')?.value||'').toLowerCase().trim();
+  const orden = document.getElementById('clienteOrden')?.value||'puntos';
+
+  // Search filter
+  if(buscar){
+    clientes = clientes.filter(c=>
+      c.nombre.toLowerCase().includes(buscar)||
+      (c.cedula||'').includes(buscar)||
+      (c.telefono||'').includes(buscar)
+    );
+  }
+
+  // Filter prize ready
+  if(orden==='premio') clientes = clientes.filter(c=>(c.puntos||0)>=cfg.metaPuntos);
+
+  // Sort
+  if(orden==='puntos'||orden==='premio') clientes.sort((a,b)=>(b.puntos||0)-(a.puntos||0));
+  else if(orden==='compras') clientes.sort((a,b)=>(b.totalCompras||0)-(a.totalCompras||0));
+  else clientes.sort((a,b)=>a.nombre.localeCompare(b.nombre));
+
+  const total = getClientes().length;
+  const conPremio = getClientes().filter(c=>(c.puntos||0)>=cfg.metaPuntos).length;
+  const totalCompras = getClientes().reduce((s,c)=>s+(c.totalCompras||0),0);
+
+  // KPIs
+  const kpiEl = document.getElementById('clientesKpis');
+  if(kpiEl) kpiEl.innerHTML=`
+    <div class="kpi-card accent"><div class="kpi-label">👥 Total clientes</div><div class="kpi-val">${total}</div><div class="kpi-sub">registrados</div></div>
+    <div class="kpi-card"><div class="kpi-label">🎁 Con premio</div><div class="kpi-val" style="color:#7B1FA2">${conPremio}</div><div class="kpi-sub">listos para canjear</div></div>
+    <div class="kpi-card"><div class="kpi-label">💰 Total compras</div><div class="kpi-val">$${totalCompras.toFixed(2)}</div><div class="kpi-sub">acumulado</div></div>
+    <div class="kpi-card"><div class="kpi-label">⭐ Meta puntos</div><div class="kpi-val" style="color:#7B1FA2">${cfg.metaPuntos}</div><div class="kpi-sub">$${cfg.dolarPorPunto} = 1 pto</div></div>
+  `;
+
+  const cont = document.getElementById('clientesList');
+  if(!cont) return;
+  if(!clientes.length){
+    cont.innerHTML='<div class="empty"><div class="ei">👥</div><p>'+( buscar?'Sin resultados':'Sin clientes registrados')+'</p></div>';
+    return;
+  }
+
+  cont.innerHTML = clientes.map((c,idx)=>{
+    const puntos = c.puntos||0;
+    const pct = Math.min(100, (puntos/cfg.metaPuntos)*100);
+    const listo = puntos >= cfg.metaPuntos;
+    return `
+    <div style="background:white;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:var(--shadow);border-left:4px solid ${listo?'#7B1FA2':'var(--border)'}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div>
+          <div style="font-size:15px;font-weight:800">${idx===0&&orden==='puntos'?'👑 ':''}${c.nombre}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">
+            ${c.telefono?`📱 ${c.telefono} `:''}${c.cedula?`· 🪪 ${c.cedula}`:''}
+          </div>
+          <div style="font-size:11px;color:var(--muted)">
+            🛒 ${c.visitas||0} visitas · 💰 $${(c.totalCompras||0).toFixed(2)} total
+            ${c.ultimaCompra?` · Última: ${c.ultimaCompra}`:''}
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:20px;font-weight:800;color:${listo?'#7B1FA2':'var(--g1)'}">⭐ ${puntos.toFixed(1)}</div>
+          <div style="font-size:10px;color:var(--muted)">de ${cfg.metaPuntos} pts</div>
+        </div>
+      </div>
+      <!-- Progress bar -->
+      <div style="background:#f0f0f0;border-radius:6px;height:8px;margin-bottom:8px;overflow:hidden">
+        <div style="width:${pct}%;height:100%;background:${listo?'#7B1FA2':'linear-gradient(90deg,var(--g1),var(--acc))'};border-radius:6px;transition:width .5s"></div>
+      </div>
+      ${listo?`<div style="background:#F3E5F5;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;color:#7B1FA2;margin-bottom:8px;text-align:center">🎁 ¡Premio disponible! — ${cfg.premio}</div>`:''}
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button onclick="openClienteModal(${c.id})" style="background:#E3F2FD;color:var(--info);border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer">✏️ Editar</button>
+        ${listo?`<button onclick="canjearPremio(${c.id})" style="background:#7B1FA2;color:white;border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer">🎁 Canjear</button>`:''}
+        <button onclick="deleteCliente(${c.id})" style="background:#FFEBEE;color:var(--danger);border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function exportClientesExcel(){
+  const clientes = getClientes();
+  const cfg = getPuntosConfig();
+  if(!clientes.length){ showToast('⚠️ Sin clientes'); return; }
+  const rows = clientes.map(c=>({
+    'Nombre': c.nombre,
+    'Teléfono': c.telefono||'',
+    'Cédula/RUC': c.cedula||'',
+    'Puntos': c.puntos||0,
+    'Meta puntos': cfg.metaPuntos,
+    'Premio disponible': (c.puntos||0)>=cfg.metaPuntos?'✅ SÍ':'❌ NO',
+    'Total compras ($)': (c.totalCompras||0).toFixed(2),
+    'Visitas': c.visitas||0,
+    'Última compra': c.ultimaCompra||'',
+    'Fecha registro': c.fechaRegistro||'',
+  }));
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols']=[{wch:20},{wch:14},{wch:14},{wch:10},{wch:12},{wch:18},{wch:16},{wch:10},{wch:14},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
+  XLSX.writeFile(wb, 'TENTEN_Clientes_'+new Date().toISOString().split('T')[0]+'.xlsx');
+  showToast('✅ Excel descargado');
 }
 
 function renderAll(){renderCategories();renderProducts();updateCartUI();}
