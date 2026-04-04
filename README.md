@@ -1,0 +1,3446 @@
+[índice.html](https://github.com/user-attachments/files/26484334/indice.html)
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>TENTEN MICROMERCADO</title>
+<meta name="description" content="Sistema POS - TENTEN MICROMERCADO">
+<meta name="theme-color" content="#C0392B">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TENTEN POS">
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<style>
+:root{
+  --g1:#C0392B;--g2:#E74C3C;--g3:#FF6B6B;
+  --acc:#F39C12;--acc2:#FDE68A;
+  --bg:#FFF8F0;--card:#FFFFFF;
+  --text:#0D1F0D;--muted:#5A7A5A;--border:#FDDCBA;
+  --danger:#D32F2F;--info:#1565C0;--warn:#E65100;
+  --shadow:0 2px 16px rgba(10,92,54,.10);--radius:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#8B0000 0%,var(--g1) 50%,#4A0000 100%);padding:20px}
+.login-box{background:white;border-radius:24px;padding:36px 28px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.login-logo{font-size:48px;text-align:center;margin-bottom:8px}
+.login-title{font-size:24px;font-weight:800;text-align:center;color:var(--g1);margin-bottom:4px}
+.login-sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:28px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px}
+.form-group input,.form-group select{width:100%;padding:13px 16px;border:2px solid var(--border);border-radius:12px;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;transition:border .2s;background:white}
+.form-group input:focus,.form-group select:focus{border-color:var(--g2)}
+.btn-primary{width:100%;background:var(--g1);color:white;border:none;border-radius:14px;padding:15px;font-size:16px;font-weight:700;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
+.btn-primary:active{transform:scale(.97)}
+.login-error{color:var(--danger);font-size:13px;text-align:center;margin-top:10px;display:none}
+#appShell{display:none;height:100vh;flex-direction:column}
+.topbar{background:var(--g1);color:white;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,.2);flex-shrink:0}
+.role-badge{background:rgba(255,255,255,.2);font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px}
+.total-pill{background:var(--acc);color:var(--text);font-size:17px;font-weight:800;padding:6px 14px;border-radius:30px;font-family:'DM Mono',monospace;box-shadow:0 2px 8px rgba(245,166,35,.4)}
+.icon-btn{background:rgba(255,255,255,.15);border:none;color:white;width:36px;height:36px;border-radius:10px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}
+.nav-tabs{background:var(--g1);display:flex;border-top:1px solid rgba(255,255,255,.1);flex-shrink:0;overflow-x:auto;scrollbar-width:none}
+.nav-tabs::-webkit-scrollbar{display:none}
+.nav-tab{flex-shrink:0;flex:1;padding:9px 4px;color:rgba(255,255,255,.6);font-size:10px;font-weight:700;text-align:center;cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;min-width:50px}
+.nav-tab.active{color:var(--acc);border-bottom-color:var(--acc)}
+.nav-tab .ti{font-size:16px;display:block;margin-bottom:2px}
+.content{flex:1;overflow-y:auto;padding:12px 8px 12px}
+/* TWO COLUMNS — ticket izquierda, productos derecha */
+.app-body{display:flex;flex:1;overflow:hidden;flex-direction:row}
+.ticket-panel{
+  position:relative!important;bottom:auto!important;left:auto!important;right:auto!important;
+  width:210px;flex-shrink:0;border-radius:0!important;
+  box-shadow:4px 0 16px rgba(0,0,0,.08)!important;
+  background:white;display:flex!important;flex-direction:column;
+  padding:10px 8px!important;overflow-y:auto;
+  border-right:2px solid var(--border);height:auto!important;
+  order:-1;
+}
+.ticket-drag{display:none!important}
+.ticket-body{max-height:180px!important;overflow-y:auto}
+.prod-grid{grid-template-columns:repeat(2,1fr)!important}
+.tl-name{font-size:11px!important}
+.tl-price{font-size:11px!important}
+.tot-row.big{font-size:15px!important}
+.btn-cobrar{font-size:12px!important;padding:9px!important}
+.btn-cancel-sale{font-size:10px!important;padding:5px!important}
+.pay-btn{font-size:8px!important;padding:5px 1px!important}
+.ticket-top span{font-size:10px!important}
+.discount-row label{font-size:10px!important}
+@media(min-width:500px){
+  .ticket-panel{width:260px!important;padding:12px!important}
+  .prod-grid{grid-template-columns:repeat(3,1fr)!important}
+  .tl-name{font-size:12px!important}
+  .tot-row.big{font-size:18px!important}
+  .btn-cobrar{font-size:14px!important;padding:11px!important}
+  .ticket-body{max-height:200px!important}
+}
+@media(min-width:900px){
+  .ticket-panel{width:300px!important;padding:16px!important}
+  .prod-grid{grid-template-columns:repeat(3,1fr)!important}
+  .ticket-body{max-height:none!important;flex:1}
+  .tot-row.big{font-size:20px!important}
+  .btn-cobrar{font-size:15px!important;padding:13px!important}
+}
+.stock-alert-banner{background:#FFF3E0;border:2px solid #FF9800;border-radius:12px;padding:10px 14px;margin-bottom:10px;font-size:12px;font-weight:700;color:var(--warn);display:none;cursor:pointer}
+.search-bar{display:flex;gap:8px;margin-bottom:10px}
+.search-bar input{flex:1;padding:11px 14px;border:2px solid var(--border);border-radius:12px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;background:white}
+.search-bar input:focus{border-color:var(--g2)}
+.scan-btn{background:var(--info);color:white;border:none;border-radius:12px;padding:11px 16px;font-size:20px;cursor:pointer}
+.barcode-hint{font-size:11px;color:var(--muted);text-align:center;margin-bottom:10px;background:#FFF3CD;border-radius:8px;padding:6px 10px}
+.cat-scroll{display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;padding-bottom:4px;scrollbar-width:none}
+.cat-scroll::-webkit-scrollbar{display:none}
+.cat-pill{flex-shrink:0;padding:7px 14px;border-radius:30px;font-size:12px;font-weight:700;background:white;border:2px solid var(--border);cursor:pointer;transition:all .2s;white-space:nowrap}
+.cat-pill.active{background:var(--g1);color:white;border-color:var(--g1)}
+.prod-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+@media(min-width:600px){.prod-grid{grid-template-columns:repeat(4,1fr)}}
+@media(min-width:900px){.prod-grid{grid-template-columns:repeat(6,1fr)}}
+.prod-card{background:white;border:2px solid var(--border);border-radius:var(--radius);padding:11px 8px;cursor:pointer;transition:all .15s;text-align:center;position:relative;box-shadow:var(--shadow);user-select:none}
+.prod-card:active{transform:scale(.92);border-color:var(--g1);background:#FFEAA7}
+.prod-card .pc-emoji{font-size:24px;display:block;margin-bottom:4px}
+.prod-card .pc-name{font-size:10px;font-weight:700;line-height:1.2;color:var(--text);margin-bottom:3px}
+.prod-card .pc-price{font-size:13px;font-weight:800;color:var(--g2);font-family:'DM Mono',monospace}
+.prod-card .pc-count{position:absolute;top:-7px;right:-7px;background:var(--danger);color:white;font-size:10px;font-weight:800;min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 4px;opacity:0;transition:opacity .2s;pointer-events:none}
+.prod-card .pc-count.show{opacity:1}
+.prod-card.low-stock::after{content:'⚠️';position:absolute;bottom:3px;right:4px;font-size:9px}
+.prod-card.out-of-stock{opacity:.4;pointer-events:none}
+.ticket-panel{position:fixed;bottom:0;left:0;right:0;background:white;border-radius:22px 22px 0 0;box-shadow:0 -6px 30px rgba(0,0,0,.12);z-index:200;padding:10px 14px 16px}
+.ticket-drag{width:36px;height:4px;background:#D0D0D0;border-radius:2px;margin:0 auto 10px}
+.ticket-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.ticket-top span{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+.ticket-body{max-height:80px;overflow-y:auto;margin-bottom:6px}
+.ticket-line{display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--border);font-size:13px}
+.tl-name{flex:1;font-weight:600}
+.tl-qty{display:flex;align-items:center;gap:4px}
+.tl-qty button{background:var(--border);border:none;width:22px;height:22px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.tl-qty span{font-family:'DM Mono',monospace;font-size:12px;font-weight:700;min-width:20px;text-align:center}
+.tl-price{font-family:'DM Mono',monospace;font-weight:700;color:var(--g2);font-size:13px}
+.tl-del{color:var(--danger);cursor:pointer;font-size:16px;padding:0 2px}
+.discount-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px dashed var(--border)}
+.discount-row label{font-size:12px;font-weight:700;color:var(--muted);flex-shrink:0}
+.discount-row input{flex:1;padding:5px 10px;border:2px solid var(--border);border-radius:8px;font-size:13px;font-family:'DM Mono',monospace;outline:none;max-width:70px}
+.discount-row input:focus{border-color:var(--acc)}
+.discount-row select{padding:5px 8px;border:2px solid var(--border);border-radius:8px;font-size:12px;outline:none;background:white}
+.payment-row{display:flex;gap:5px;margin:6px 0}
+.pay-btn{flex:1;padding:7px 2px;border-radius:10px;border:2px solid var(--border);font-size:10px;font-weight:700;cursor:pointer;background:white;transition:all .15s;text-align:center}
+.pay-btn.active{background:var(--g1);color:white;border-color:var(--g1)}
+.ticket-totals{padding:4px 0 0}
+.tot-row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:2px}
+.tot-row .trl{font-weight:700}
+.tot-row .trv{font-family:'DM Mono',monospace;font-weight:700}
+.tot-row.big{font-size:22px;font-weight:800;color:var(--g1);font-family:'DM Mono',monospace;border-top:2px solid var(--border);padding-top:5px;margin-top:3px}
+.btn-cobrar{width:100%;background:var(--g1);color:white;border:none;border-radius:14px;padding:13px;font-size:16px;font-weight:800;cursor:pointer;margin-top:7px;transition:all .15s}
+.btn-cobrar:active{transform:scale(.97)}
+.btn-cancel-sale{width:100%;background:transparent;border:2px solid #FFCDD2;color:var(--danger);border-radius:12px;padding:8px;font-size:13px;font-weight:700;cursor:pointer;margin-top:5px}
+.date-filter{display:flex;gap:8px;margin-bottom:12px;align-items:center}
+.date-filter input{flex:1;padding:9px 12px;border:2px solid var(--border);border-radius:10px;font-size:14px;outline:none;background:white}
+.date-filter input:focus{border-color:var(--g2)}
+.date-filter button{background:var(--g1);color:white;border:none;border-radius:10px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer}
+.sale-card{background:white;border-radius:14px;padding:13px 15px;margin-bottom:8px;box-shadow:var(--shadow);border-left:4px solid var(--g2)}
+.sc-top{display:flex;justify-content:space-between;align-items:center}
+.sc-hora{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace}
+.sc-user{font-size:11px;font-weight:700;color:var(--g1);background:#FFEAA7;padding:2px 8px;border-radius:20px}
+.sc-total{font-size:20px;font-weight:800;color:var(--g1);font-family:'DM Mono',monospace}
+.sc-items{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5}
+.sc-badges{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px}
+.badge-cash{background:#FFF3CD;color:#2E7D32}.badge-transfer{background:#E3F2FD;color:#1565C0}
+.badge-card{background:#F3E5F5;color:#6A1B9A}.badge-discount{background:#FFF3E0;color:#E65100}
+.badge-credit{background:#FFEBEE;color:#C62828}
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+@media(min-width:600px){.kpi-grid{grid-template-columns:repeat(4,1fr)}}
+.kpi-card{background:white;border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.kpi-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px}
+.kpi-val{font-size:22px;font-weight:800;color:var(--g1);font-family:'DM Mono',monospace}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.kpi-card.accent{background:var(--g1)}
+.kpi-card.accent .kpi-label{color:rgba(255,255,255,.7)}
+.kpi-card.accent .kpi-val{color:var(--acc)}
+.kpi-card.accent .kpi-sub{color:rgba(255,255,255,.6)}
+.chart-bar-wrap{background:white;border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin-bottom:16px}
+.chart-title{font-size:13px;font-weight:800;margin-bottom:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.bar-label{font-size:12px;font-weight:600;width:110px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;background:var(--bg);border-radius:6px;height:14px;overflow:hidden}
+.bar-fill{height:100%;background:linear-gradient(90deg,var(--g1),var(--acc));border-radius:6px;transition:width .5s ease}
+.bar-val{font-size:11px;font-family:'DM Mono',monospace;font-weight:700;color:var(--g1);width:36px;text-align:right;flex-shrink:0}
+.btn-whatsapp{width:100%;background:#25D366;color:white;border:none;border-radius:14px;padding:14px;font-size:16px;font-weight:800;cursor:pointer;margin-top:8px}
+.stock-section{background:white;border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin-bottom:16px}
+.stock-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.stock-item:last-child{border:none}
+.si-name{font-weight:700}.si-stock{font-family:'DM Mono',monospace;font-weight:800;color:var(--warn)}
+.fiado-card{background:white;border-radius:14px;padding:13px 15px;margin-bottom:8px;box-shadow:var(--shadow);border-left:4px solid var(--danger)}
+.fc-top{display:flex;justify-content:space-between;align-items:center}
+.fc-name{font-size:15px;font-weight:800}.fc-total{font-size:18px;font-weight:800;color:var(--danger);font-family:'DM Mono',monospace}
+.fc-detail{font-size:12px;color:var(--muted);margin-top:4px}
+.fc-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.btn-pay-fiado{background:#FFF3CD;color:var(--g1);border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer}
+.fiado-summary{background:var(--danger);color:white;border-radius:14px;padding:14px 16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+.fiado-summary .fs-label{font-size:12px;opacity:.8}.fiado-summary .fs-val{font-size:24px;font-weight:800;font-family:'DM Mono',monospace}
+.admin-section{margin-bottom:24px}
+.section-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.section-hdr h2{font-size:15px;font-weight:800}
+.btn-add{background:var(--g1);color:white;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer}
+.user-card,.prod-row{background:white;border-radius:12px;padding:13px 15px;margin-bottom:8px;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:space-between}
+.uc-info .uc-name{font-size:14px;font-weight:700}.uc-info .uc-role{font-size:11px;color:var(--muted)}
+.uc-actions{display:flex;gap:6px}
+.btn-edit,.btn-del{border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer}
+.btn-edit{background:#E3F2FD;color:var(--info)}.btn-del{background:#FFEBEE;color:var(--danger)}
+.pr-info{flex:1}.pr-name{font-size:14px;font-weight:700}.pr-meta{font-size:11px;color:var(--muted)}
+.pr-price{font-size:16px;font-weight:800;font-family:'DM Mono',monospace;color:var(--g2);margin:0 12px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.show{display:flex}
+.modal{background:white;border-radius:20px;padding:24px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal h3{font-size:18px;font-weight:800;margin-bottom:20px}
+.modal .form-group{margin-bottom:14px}
+.modal-actions{display:flex;gap:8px;margin-top:20px}
+.modal-actions button{flex:1;padding:13px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;border:none}
+.btn-confirm{background:var(--g1);color:white}.btn-cancel{background:var(--bg);color:var(--text)}
+.change-box{background:var(--g1);color:white;border-radius:16px;padding:20px;margin:12px 0;text-align:center}
+.change-box .cb-label{font-size:12px;opacity:.75;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.change-box .cb-val{font-size:40px;font-weight:800;font-family:'DM Mono',monospace;color:var(--acc)}
+.change-input{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.change-input label{font-size:13px;font-weight:700;flex-shrink:0}
+.change-input input{flex:1;padding:11px 14px;border:2px solid var(--border);border-radius:12px;font-size:18px;font-family:'DM Mono',monospace;font-weight:700;outline:none}
+.change-input input:focus{border-color:var(--g2)}
+.receipt-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:600;display:none;align-items:center;justify-content:center;padding:20px}
+.receipt-overlay.show{display:flex}
+.receipt-wrap{background:#f9f5f0;border-radius:4px;width:100%;max-width:220px;box-shadow:0 10px 40px rgba(0,0,0,.4);overflow:hidden;font-family:'Courier New',Courier,monospace}
+.receipt-actions{display:flex;gap:8px;padding:10px;background:white;border-top:1px solid #ddd}
+.receipt-actions button{flex:1;padding:9px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none;font-family:'DM Sans',sans-serif}
+.btn-print-now{background:var(--g1);color:white}.btn-close-receipt{background:#f0f0f0;color:var(--text)}
+.receipt-paper{padding:10px 8px 6px;background:#fffdf8;border-bottom:2px dashed #ccc}
+.receipt-store-name{font-size:14px;font-weight:700;text-align:center;letter-spacing:.5px;text-transform:uppercase;font-family:'Courier New',Courier,monospace;color:#111;margin-bottom:1px}
+.receipt-tagline{font-size:8px;text-align:center;color:#888;margin-bottom:8px;font-family:'Courier New',Courier,monospace;letter-spacing:.3px}
+.receipt-divider{border:none;border-top:1px dashed #bbb;margin:6px 0}
+.receipt-meta{font-size:8px;color:#555;margin-bottom:6px;line-height:1.7;font-family:'Courier New',Courier,monospace}
+.receipt-col-hdr{display:flex;font-size:8px;font-weight:700;color:#888;text-transform:uppercase;padding-bottom:3px;border-bottom:1px solid #ddd;margin-bottom:4px;font-family:'Courier New',Courier,monospace}
+.receipt-item{display:flex;font-size:9px;line-height:1.7;color:#222;font-family:'Courier New',Courier,monospace}
+.ri-name{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:80px}.ri-qty{width:22px;text-align:center}.ri-price{width:38px;text-align:right}.ri-sub{width:42px;text-align:right;font-weight:700}
+.receipt-total-row{display:flex;justify-content:space-between;align-items:baseline;margin-top:6px;padding-top:6px;border-top:2px solid #222;font-family:'Courier New',Courier,monospace}
+.receipt-total-label{font-size:11px;font-weight:700;text-transform:uppercase}
+.receipt-total-val{font-size:16px;font-weight:700}
+.receipt-footer-txt{text-align:center;font-size:8px;color:#999;margin-top:10px;font-family:'Courier New',Courier,monospace;line-height:1.6;padding-bottom:10px}
+.receipt-tear{height:10px;background:repeating-linear-gradient(90deg,#f9f5f0 0,#f9f5f0 6px,transparent 6px,transparent 10px);border-top:2px dashed #ccc}
+.toast{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-10px);background:var(--g1);color:white;padding:10px 22px;border-radius:30px;font-size:14px;font-weight:700;opacity:0;transition:all .3s;z-index:999;white-space:nowrap;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.empty{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty .ei{font-size:44px;margin-bottom:10px}
+.empty p{font-size:14px;font-weight:600}
+.stitle{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin:14px 0 8px 2px}
+@media print{
+  @page{size:58mm auto;margin:0mm}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  body>*{display:none!important}
+  #printArea{display:block!important;margin:0!important;padding:0!important;width:58mm!important;max-width:58mm!important;box-shadow:none!important;border-radius:0!important;background:white!important}
+  #printArea .receipt-actions{display:none!important}
+  #printArea .receipt-wrap{width:58mm!important;max-width:58mm!important;box-shadow:none!important;border-radius:0!important}
+  #printArea .receipt-paper{padding:4mm 3mm 3mm!important}
+  #printArea .receipt-store-name{font-size:12pt!important}
+  #printArea .receipt-tagline{font-size:7pt!important}
+  #printArea .receipt-meta{font-size:7pt!important}
+  #printArea .receipt-col-hdr{font-size:7pt!important}
+  #printArea .receipt-item{font-size:7.5pt!important}
+  #printArea .receipt-total-label{font-size:9pt!important}
+  #printArea .receipt-total-val{font-size:13pt!important}
+  #printArea .receipt-footer-txt{font-size:7pt!important}
+  #printArea .receipt-tear{display:none!important}
+}
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">🏪</div>
+    <div class="login-title">TENTEN MICROMERCADO</div>
+    <div class="login-sub">Sistema de ventas en la nube</div>
+    <div class="form-group"><label>Usuario</label><input type="text" id="loginUser" placeholder="Tu nombre de usuario" autocomplete="username"></div>
+    <div class="form-group"><label>Contraseña</label>
+      <div style="position:relative">
+        <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" style="width:100%;padding:13px 44px 13px 16px;border:2px solid var(--border);border-radius:12px;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;transition:border .2s;background:white">
+        <span onclick="togglePass('loginPass',this)" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:20px;user-select:none">👁️</span>
+      </div></div>
+    <button class="btn-primary" onclick="doLogin()">Entrar →</button>
+    <div class="login-error" id="loginError">Usuario o contraseña incorrectos</div>
+    <div style="text-align:center;margin-top:14px">
+      <span onclick="showRecoverModal()" style="font-size:13px;color:var(--g1);cursor:pointer;text-decoration:underline;font-weight:600">¿Olvidaste tu contraseña? Recupérala aquí</span>
+    </div>
+    <div style="margin-top:12px;font-size:11px;color:#aaa;text-align:center">👑 Admin: <b>admin / admin123</b> &nbsp;|&nbsp; 👤 Cajero: <b>cajero1 / 1234</b></div>
+  </div>
+</div>
+
+<div id="appShell" style="display:none;flex-direction:column">
+  <div class="topbar">
+    <div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:20px">🏪</span>
+        <span style="font-weight:800;font-size:15px">TENTEN</span>
+        <span class="role-badge" id="roleBadge">-</span>
+      </div>
+      <div style="font-size:10px;opacity:.65;margin-top:1px" id="topDate"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div id="connIndicator"><span style="font-size:11px;font-weight:800;color:#f59e0b">⏳</span></div>
+      <div style="position:relative">
+        <span id="queueBadge" style="display:none;position:absolute;top:-6px;right:-6px;background:#ef4444;color:white;font-size:9px;font-weight:800;border-radius:10px;padding:1px 5px;z-index:10">0</span>
+      </div>
+      <div class="total-pill" id="totalPill">$0.00</div>
+      <button id="installBtn" class="icon-btn" onclick="installPWA()" style="display:none;background:var(--acc);color:#333" title="Instalar App">📲</button>
+      <button class="icon-btn" onclick="doLogout()">🚪</button>
+    </div>
+  </div>
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="goTab('vender')"><span class="ti">🛒</span>Vender</div>
+    <div class="nav-tab" onclick="goTab('historial')"><span class="ti">📋</span>Historial</div>
+    <div class="nav-tab" onclick="goTab('resumen')"><span class="ti">📊</span>Resumen</div>
+    <div class="nav-tab" onclick="goTab('fiados')"><span class="ti">📝</span>Fiados</div>
+    <div class="nav-tab" onclick="goTab('clientes')"><span class="ti">👥</span>Clientes</div>
+    <div class="nav-tab" onclick="goTab('inventario')"><span class="ti">📦</span>Inventario</div>
+    <div class="nav-tab admin-only" onclick="goTab('reportes')" style="display:none"><span class="ti">📊</span>Reportes</div>
+    <div class="nav-tab admin-only" onclick="goTab('admin')" style="display:none"><span class="ti">⚙️</span>Admin</div>
+  </div>
+  <div class="app-body">
+  <div class="content">
+    <div id="tab-vender">
+      <div id="stockAlertBanner" class="stock-alert-banner" onclick="goTab('resumen')"></div>
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="🔍 Buscar o escanear código..." oninput="filterProducts()" onkeydown="handleBarcode(event)">
+        <button class="scan-btn" onclick="focusBarcode()">⚡</button>
+      </div>
+      <div class="barcode-hint">🔫 Pistola lectora lista — apunta al código de barras</div>
+      <div class="cat-scroll" id="catScroll"></div>
+      <div class="prod-grid" id="prodGrid"></div>
+    </div>
+    <div id="tab-historial" style="display:none">
+      <!-- Fechas -->
+      <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap">
+        <input type="date" id="histFechaInicio" onchange="renderHistorial()" style="flex:1;padding:8px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;outline:none;background:white">
+        <span style="font-size:12px;color:var(--muted);font-weight:700">al</span>
+        <input type="date" id="histFechaFin" onchange="renderHistorial()" style="flex:1;padding:8px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;outline:none;background:white">
+        <button onclick="setHistorialHoy()" style="background:var(--g1);color:white;border:none;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:700;cursor:pointer">Hoy</button>
+      </div>
+      <!-- Buscador -->
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <input type="text" id="histBuscar" placeholder="🔍 Buscar por nombre, cédula o # comprobante..." oninput="renderHistorial()" style="flex:1;padding:10px 14px;border:2px solid var(--border);border-radius:12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;background:white">
+        <button onclick="limpiarHistorial()" style="background:var(--border);border:none;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer">✕</button>
+      </div>
+      <div id="historialSummary"></div>
+      <div id="historialList"></div>
+    </div>
+    <div id="tab-resumen" style="display:none">
+      <!-- Filtro fechas -->
+      <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
+        <input type="date" id="resumenFechaInicio" onchange="renderResumen()" style="flex:1;padding:8px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;outline:none;background:white">
+        <span style="font-size:12px;color:var(--muted);font-weight:700">al</span>
+        <input type="date" id="resumenFechaFin" onchange="renderResumen()" style="flex:1;padding:8px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;outline:none;background:white">
+        <button onclick="setResumenHoy()" style="background:var(--g1);color:white;border:none;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:700;cursor:pointer">Hoy</button>
+      </div>
+      <div class="kpi-grid" id="kpiGrid"></div>
+      <div class="chart-bar-wrap"><div class="chart-title" id="resumenChartTitle">🏆 Más vendidos</div><div id="topChart"></div></div>
+      <div class="stock-section" id="stockSection" style="display:none"><div class="chart-title">⚠️ Stock bajo — ¡Pedir pronto!</div><div id="stockList"></div></div>
+      <button class="btn-whatsapp" onclick="shareWhatsApp()">📲 Enviar resumen por WhatsApp</button>
+    </div>
+    <div id="tab-fiados" style="display:none">
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <h2 style="font-size:15px;font-weight:800">📝 Control de Fiados</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn-add" onclick="openFiadoModal(null)">+ Nuevo</button>
+          <button onclick="exportFiadosExcel()" style="background:#2E7D32;color:white;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer">📥 Excel</button>
+        </div>
+      </div>
+      <!-- Buscador -->
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <input type="text" id="fiadoBuscar" placeholder="🔍 Buscar por nombre, cédula o teléfono..." oninput="renderFiados()" style="flex:1;padding:10px 14px;border:2px solid var(--border);border-radius:12px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;background:white">
+        <button onclick="limpiarFiltroFiado()" style="background:var(--border);border:none;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer">✕</button>
+      </div>
+      <!-- Filtros -->
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <select id="fiadoEstadoFilter" onchange="renderFiados()" style="flex:1;padding:8px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;background:white;outline:none">
+          <option value="pendiente">💳 Pendientes</option>
+          <option value="pagado">✅ Pagados</option>
+          <option value="todos">📋 Todos</option>
+        </select>
+        <input type="date" id="fiadoFechaFilter" onchange="renderFiados()" style="flex:1;padding:8px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;background:white;outline:none">
+      </div>
+      <div id="fiadoSummary"></div>
+      <div id="fiadoList"></div>
+    </div>
+    <div id="tab-clientes" style="display:none">
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <h2 style="font-size:15px;font-weight:800">👥 Cartera de Clientes</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button onclick="openClienteModal(null)" class="btn-add">+ Nuevo Cliente</button>
+          <button onclick="openConfigPuntos()" style="background:#1565C0;color:white;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer">⚙️ Config Puntos</button>
+        </div>
+      </div>
+      <!-- Buscador -->
+      <div style="margin-bottom:10px">
+        <input type="text" id="clienteBuscar" placeholder="🔍 Buscar por nombre, cédula o teléfono..." oninput="renderClientes()" style="width:100%;padding:10px 14px;border:2px solid var(--border);border-radius:12px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;background:white">
+      </div>
+      <!-- Filtros -->
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <select id="clienteOrdenFilter" onchange="renderClientes()" style="flex:1;padding:8px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;background:white;outline:none">
+          <option value="puntos">⭐ Por puntos</option>
+          <option value="compras">🛒 Por compras</option>
+          <option value="nombre">👤 Por nombre</option>
+          <option value="canje">🎁 Listos para canjear</option>
+        </select>
+      </div>
+      <!-- KPIs -->
+      <div id="clientesKpis" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"></div>
+      <!-- Lista -->
+      <div id="clientesList"></div>
+    </div>
+
+    <div id="tab-inventario" style="display:none">
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <h2 style="font-size:16px;font-weight:800">📦 Inventario</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button onclick="document.getElementById('excelImportInv').click()" style="background:#1565C0;color:white;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer">📥 Cargar Excel</button>
+          <button onclick="downloadPlantilla()" style="background:#2E7D32;color:white;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer">📤 Plantilla</button>
+        </div>
+      </div>
+      <input type="file" id="excelImportInv" accept=".xlsx,.xls,.csv" style="display:none" onchange="importFromExcel(event)">
+      <div id="importProgressInv" style="display:none;background:#E3F2FD;border-radius:12px;padding:12px;margin-bottom:12px;font-size:13px;font-weight:700;color:#1565C0"></div>
+      <!-- Filters -->
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <select id="invCatFilter" onchange="renderInventario()" style="padding:8px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;background:white;outline:none;flex:1">
+          <option value="">Todas las categorías</option>
+        </select>
+        <select id="invStockFilter" onchange="renderInventario()" style="padding:8px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;background:white;outline:none;flex:1">
+          <option value="all">Todo el stock</option>
+          <option value="low">⚠️ Stock bajo</option>
+          <option value="out">🔴 Agotados</option>
+          <option value="ok">✅ Bien surtidos</option>
+        </select>
+      </div>
+      <!-- KPIs -->
+      <div id="invKpis" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"></div>
+      <!-- Product list by category -->
+      <div id="invTable"></div>
+    </div>
+
+    <div id="tab-reportes" style="display:none">
+
+      <!-- VENTAS ANULADAS -->
+      <div style="margin-bottom:24px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <h2 style="font-size:15px;font-weight:800">🚫 Ventas Anuladas</h2>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="date" id="anuladasFechaInicio" onchange="renderReportes()" style="flex:1;padding:8px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;outline:none;background:white">
+            <span style="font-size:12px;color:var(--muted);font-weight:700">al</span>
+            <input type="date" id="anuladasFechaFin" onchange="renderReportes()" style="flex:1;padding:8px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;outline:none;background:white">
+            <button onclick="setHoyAnuladas()" style="background:var(--g1);color:white;border:none;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:700;cursor:pointer">Hoy</button>
+          </div>
+        </div>
+        <div id="anuladasResumen" style="margin-bottom:10px"></div>
+        <div id="anuladasList"></div>
+      </div>
+
+      <!-- HISTORIAL DE VENTAS -->
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <h2 style="font-size:15px;font-weight:800">📋 Historial de Ventas</h2>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="date" id="reporteFechaInicio" style="padding:8px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;outline:none;background:white">
+            <span style="font-size:13px;color:var(--muted)">al</span>
+            <input type="date" id="reporteFechaFin" style="padding:8px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;outline:none;background:white">
+            <button onclick="renderReportes()" style="background:var(--g1);color:white;border:none;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:700;cursor:pointer">🔍 Filtrar</button>
+            <button onclick="exportHistorialExcel()" style="background:#2E7D32;color:white;border:none;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:700;cursor:pointer">📥 Excel</button>
+          </div>
+        </div>
+        <div id="reporteResumen" style="margin-bottom:10px"></div>
+        <div id="reporteList"></div>
+      </div>
+
+    </div>
+
+    <div id="tab-admin" style="display:none">
+      <div class="admin-section">
+        <div class="section-hdr"><h2>👥 Usuarios</h2><button class="btn-add" onclick="openModal('user')">+ Agregar</button></div>
+        <div id="userList"></div>
+      </div>
+      <div class="admin-section">
+        <div class="section-hdr">
+          <h2>📦 Productos</h2>
+          <div style="display:flex;gap:6px">
+            <button class="btn-add" onclick="openModal('product')">+ Agregar</button>
+            <button class="btn-add" onclick="document.getElementById('excelImport').click()" style="background:#1565C0">📥 Importar Excel</button>
+            <button class="btn-add" onclick="downloadPlantilla()" style="background:#2E7D32">📤 Plantilla</button>
+          </div>
+        </div>
+        <input type="file" id="excelImport" accept=".xlsx,.xls,.csv" style="display:none" onchange="importFromExcel(event)">
+        <div id="importProgress" style="display:none;background:#E3F2FD;border-radius:12px;padding:12px;margin-bottom:10px;font-size:13px;font-weight:700;color:#1565C0"></div>
+        <div class="search-bar" style="margin-bottom:10px"><input type="text" id="adminSearch" placeholder="Buscar producto..." oninput="renderAdminProducts()"></div>
+        <div id="adminProductList"></div>
+      </div>
+    </div>
+  </div><!-- end content -->
+  <div class="ticket-panel" id="ticketPanel">
+    <div class="ticket-drag"></div>
+    <div class="ticket-top">
+      <span>🧾 Venta actual</span>
+      <span id="ticketCount" style="color:var(--g2);font-family:'DM Mono',monospace;font-weight:800">0 items</span>
+    </div>
+    <div class="ticket-body" id="ticketBody">
+      <div style="text-align:center;color:var(--muted);font-size:13px;padding:8px">Toca un producto para agregar</div>
+    </div>
+    <div class="discount-row">
+      <label>🏷️ Desc.</label>
+      <input type="number" id="discountVal" placeholder="0" min="0" oninput="updateCartUI()">
+      <select id="discountType" onchange="updateCartUI()"><option value="pct">%</option><option value="fixed">$</option></select>
+      <span style="font-size:12px;color:var(--danger);font-weight:700;font-family:'DM Mono',monospace" id="discountLine"></span>
+    </div>
+    <div class="payment-row">
+      <div class="pay-btn active" id="pay-cash" onclick="setPayment('cash')">💵 Efectivo</div>
+      <div class="pay-btn" id="pay-transfer" onclick="setPayment('transfer')">📱 Transfer.</div>
+      <div class="pay-btn" id="pay-card" onclick="setPayment('card')">💳 Tarjeta</div>
+      <div class="pay-btn" id="pay-credit" onclick="setPayment('credit')" style="color:var(--danger)">📝 Fiado</div>
+    </div>
+    <div class="ticket-totals">
+      <div class="tot-row"><span class="trl">Subtotal</span><span class="trv" id="subtotalAmt">$0.00</span></div>
+      <div class="tot-row" id="discountRow" style="display:none;color:var(--danger)"><span class="trl">Descuento</span><span class="trv" id="discountAmt">-$0.00</span></div>
+      <div class="tot-row big"><span>TOTAL</span><span id="ticketTotalAmt">$0.00</span></div>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:7px">
+      <button class="btn-cobrar" onclick="cobrar()" style="flex:1">✅ COBRADO</button>
+      <button onclick="cobrarConFactura()" style="flex:1;background:#1565C0;color:white;border:none;border-radius:14px;padding:13px;font-size:13px;font-weight:800;cursor:pointer">🧾 Con Factura</button>
+    </div>
+    <button class="btn-cancel-sale" onclick="cancelSale()">🗑️ Cancelar venta</button>
+  </div>
+  </div><!-- end app-body -->
+</div>
+
+<div class="modal-overlay" id="modalOverlay"><div class="modal" id="modalBox"></div></div>
+
+<div class="modal-overlay" id="changeOverlay">
+  <div class="modal">
+    <h3>💵 Calculadora de Cambio</h3>
+    <div style="text-align:center;margin-bottom:12px">
+      <div style="font-size:12px;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.5px">Total a cobrar</div>
+      <div style="font-size:32px;font-weight:800;color:var(--g1);font-family:'DM Mono',monospace" id="changeTotalShow">$0.00</div>
+    </div>
+    <div class="change-input">
+      <label>Paga con:</label>
+      <input type="number" id="receivedAmt" placeholder="0.00" step="0.05" oninput="calcChange()">
+    </div>
+    <div class="change-box">
+      <div class="cb-label">Devolver al cliente</div>
+      <div class="cb-val" id="changeAmt">$0.00</div>
+    </div>
+    <!-- Checkbox afiliar cliente -->
+    <div style="background:#F3E5F5;border-radius:10px;padding:10px 12px;margin:10px 0">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:0">
+        <input type="checkbox" id="chkAfiliarCambio" onchange="toggleAfiliarCambio()" style="width:20px;height:20px;cursor:pointer;accent-color:#7B1FA2;flex-shrink:0">
+        <div>
+          <div style="font-size:13px;font-weight:800;color:#7B1FA2">⭐ Afiliar / identificar cliente</div>
+          <div style="font-size:11px;color:#888">Activa para sumar puntos de fidelidad</div>
+        </div>
+      </label>
+      <!-- Panel búsqueda -->
+      <div id="afiliarCambioPanel" style="display:none;margin-top:10px">
+        <input id="clienteCambioSearch" placeholder="🔍 Nombre, cédula o teléfono..." oninput="buscarClienteCambio()" style="width:100%;padding:8px 10px;border:2px solid #CE93D8;border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:8px">
+        <div id="clienteCambioList" style="max-height:130px;overflow-y:auto"></div>
+        <div id="clienteCambioSeleccionado" style="display:none;background:white;border-radius:8px;padding:8px;margin-top:6px;display:flex;justify-content:space-between;align-items:center">
+          <span id="clienteCambioNombre" style="font-weight:700;color:#7B1FA2;font-size:13px"></span>
+          <button onclick="deseleccionarClienteCambio()" style="background:none;border:none;color:#999;font-size:16px;cursor:pointer">✕</button>
+        </div>
+        <!-- Registrar nuevo -->
+        <div id="registrarNuevoCambio" style="display:none;margin-top:8px;border-top:1px dashed #CE93D8;padding-top:8px">
+          <div style="font-size:11px;color:#888;margin-bottom:6px">¿Cliente nuevo? Regístralo aquí:</div>
+          <input id="nuevoNombreCambio" placeholder="Nombre completo" style="width:100%;padding:7px 10px;border:1px solid #CE93D8;border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:6px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <input id="nuevoTelefonoCambio" placeholder="Teléfono" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="padding:7px 10px;border:1px solid #CE93D8;border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
+            <input id="nuevoCedulaCambio" placeholder="Cédula" maxlength="13" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="padding:7px 10px;border:1px solid #CE93D8;border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
+          </div>
+          <button onclick="registrarClienteCambio()" style="width:100%;margin-top:6px;background:#7B1FA2;color:white;border:none;border-radius:8px;padding:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">⭐ Registrar y afiliar</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeChange()">← Volver</button>
+      <button class="btn-confirm" onclick="confirmCobro()">✅ Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="receipt-overlay" id="receiptOverlay">
+  <div class="receipt-wrap" id="printArea">
+    <div class="receipt-paper" id="receiptContent"></div>
+    <div class="receipt-tear"></div>
+    <div class="receipt-actions">
+      <button class="btn-close-receipt" onclick="closeReceipt()">✕ Cerrar</button>
+      <button class="btn-print-now" onclick="printReceipt()">🖨️ Imprimir</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// FIREBASE CONFIG — TENTEN MICROMERCADO
+// ============================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyA1GPB3oH3uUQm5R47RAWa7bORLQN9jg0I",
+  authDomain: "tente-micromercado.firebaseapp.com",
+  projectId: "tente-micromercado",
+  storageBucket: "tente-micromercado.firebasestorage.app",
+  messagingSenderId: "295599884206",
+  appId: "1:295599884206:web:f1cd84b65fa08c17556a3f",
+  measurementId: "G-NDPK3MYDWM"
+};
+
+// ============================================================
+// DB LOCAL — siempre funciona aunque no haya internet
+// ============================================================
+const DB = {
+  get(k){ try{ return JSON.parse(localStorage.getItem('pos_'+k)||'null') }catch(e){ return null } },
+  set(k,v){ localStorage.setItem('pos_'+k, JSON.stringify(v)) },
+};
+
+// ============================================================
+// FIREBASE + OFFLINE QUEUE
+// ============================================================
+let fsdb = null;
+let isOnline = navigator.onLine;
+let offlineQueue = JSON.parse(localStorage.getItem('pos_offlineQueue')||'[]');
+
+// Init Firebase
+try {
+  firebase.initializeApp(firebaseConfig);
+  fsdb = firebase.firestore();
+  fsdb.enablePersistence({synchronizeTabs:true}).catch(e=>console.log('persist:',e.code));
+  console.log('✅ Firebase listo');
+  // Init Firebase Auth
+  try {
+    window.fbAuth = firebase.auth();
+    window.fbAuth.languageCode = 'es';
+    console.log('✅ Firebase Auth listo');
+  } catch(e){ console.log('Auth error:',e); }
+  setTimeout(()=>{ syncFromFirebase(); processOfflineQueue(); }, 1500);
+} catch(e){ console.log('Firebase error:',e); }
+
+// Online/Offline events
+window.addEventListener('online', ()=>{
+  isOnline=true; updateConnIndicator();
+  showToast('🟢 Conexión restaurada — sincronizando...');
+  setTimeout(()=>{ processOfflineQueue(); syncFromFirebase(); }, 500);
+});
+window.addEventListener('offline', ()=>{
+  isOnline=false; updateConnIndicator();
+  showToast('🔴 Sin conexión — guardando localmente');
+});
+
+function updateConnIndicator(){
+  const el=document.getElementById('connIndicator');
+  if(!el) return;
+  el.innerHTML = isOnline
+    ? '<span style="font-size:11px;font-weight:800;color:#22c55e">🟢 Online</span>'
+    : '<span style="font-size:11px;font-weight:800;color:#ef4444">🔴 Offline</span>';
+}
+
+// Sync all data FROM Firebase to localStorage
+async function syncFromFirebase(){
+  if(!fsdb||!isOnline) return;
+  try {
+    // Products
+    const ps = await fsdb.collection('products').get();
+    if(!ps.empty){ DB.set('products', ps.docs.map(d=>d.data())); renderCategories();renderProducts();checkStockAlerts(); }
+    // Users
+    const us = await fsdb.collection('users').get();
+    if(!us.empty){
+      const fbUsers = us.docs.map(d=>d.data());
+      // Merge — Firebase wins for existing, keep local new ones
+      const localUsers = DB.get('users')||[];
+      const fbIds = new Set(fbUsers.map(u=>u.id));
+      const onlyLocal = localUsers.filter(u=>!fbIds.has(u.id));
+      DB.set('users', [...fbUsers, ...onlyLocal]);
+    }
+    // Sales
+    const today = new Date().toISOString().split('T')[0];
+    const ss = await fsdb.collection('sales').where('date','==',today).get();
+    if(!ss.empty){
+      const fbSales = ss.docs.map(d=>d.data());
+      const local = DB.get('sales')||[];
+      const ids = new Set(local.map(s=>s.id));
+      const merged = [...local, ...fbSales.filter(s=>!ids.has(s.id))];
+      merged.sort((a,b)=>b.id-a.id);
+      DB.set('sales', merged);
+    }
+    // Fiados
+    const fs2 = await fsdb.collection('fiados').get();
+    if(!fs2.empty){ DB.set('fiados', fs2.docs.map(d=>d.data())); }
+    console.log('✅ Sincronizado desde Firebase');
+  } catch(e){ console.log('syncFromFirebase error:',e); }
+}
+
+// Save to Firebase or queue for later
+async function fbSave(collection, id, data){
+  if(fsdb && isOnline){
+    try { await fsdb.collection(collection).doc(String(id)).set(data); return true; }
+    catch(e){ queueOp('set', collection, id, data); return false; }
+  } else { queueOp('set', collection, id, data); return false; }
+}
+
+async function fbDelete(collection, id){
+  if(fsdb && isOnline){
+    try { await fsdb.collection(collection).doc(String(id)).delete(); return true; }
+    catch(e){ return false; }
+  }
+}
+
+function queueOp(op, col, id, data){
+  offlineQueue.push({op,col,id:String(id),data,ts:Date.now()});
+  localStorage.setItem('pos_offlineQueue', JSON.stringify(offlineQueue));
+  const el=document.getElementById('queueBadge');
+  if(el){ el.textContent=offlineQueue.length; el.style.display=offlineQueue.length?'inline':'none'; }
+}
+
+async function processOfflineQueue(){
+  if(!fsdb||!isOnline||!offlineQueue.length) return;
+  const q=[...offlineQueue]; offlineQueue=[];
+  localStorage.setItem('pos_offlineQueue','[]');
+  let ok=0;
+  for(const item of q){
+    try{
+      if(item.op==='set') await fsdb.collection(item.col).doc(item.id).set(item.data);
+      else if(item.op==='delete') await fsdb.collection(item.col).doc(item.id).delete();
+      ok++;
+    }catch(e){ offlineQueue.push(item); }
+  }
+  localStorage.setItem('pos_offlineQueue', JSON.stringify(offlineQueue));
+  if(ok) showToast('☁️ '+ok+' registros sincronizados con Firebase ✅');
+  updateConnIndicator();
+}
+
+function initData(){
+  if(!DB.get('users')) DB.set('users',[
+    {id:1,username:'admin',password:'admin123',name:'Administrador',role:'admin'},
+    {id:2,username:'cajero1',password:'1234',name:'Cajero 1',role:'cajero'},
+    {id:3,username:'cajero2',password:'1234',name:'Cajero 2',role:'cajero'},
+  ]);
+  if(!DB.get('products')) DB.set('products',[
+    {id:1,name:'Copia B/N',emoji:'🖨️',price:0.05,category:'Copias',barcode:'COPY-BN',stock:-1,lowStockAt:0},
+    {id:2,name:'Copia Color',emoji:'🌈',price:0.15,category:'Copias',barcode:'COPY-COL',stock:-1,lowStockAt:0},
+    {id:3,name:'Impresión B/N',emoji:'📄',price:0.10,category:'Copias',barcode:'IMP-BN',stock:-1,lowStockAt:0},
+    {id:4,name:'Impresión Color',emoji:'🖼️',price:0.25,category:'Copias',barcode:'IMP-COL',stock:-1,lowStockAt:0},
+    {id:5,name:'Cola 300ml',emoji:'🥤',price:0.50,category:'Bebidas',barcode:'7740001',stock:50,lowStockAt:10},
+    {id:6,name:'Cola 1.5L',emoji:'🍾',price:1.25,category:'Bebidas',barcode:'7740002',stock:30,lowStockAt:5},
+    {id:7,name:'Agua 500ml',emoji:'💧',price:0.35,category:'Bebidas',barcode:'7740003',stock:40,lowStockAt:10},
+    {id:8,name:'Jugo Pulp',emoji:'🧃',price:0.75,category:'Bebidas',barcode:'7740004',stock:25,lowStockAt:5},
+    {id:9,name:'Snack Chips',emoji:'🍟',price:0.35,category:'Snacks',barcode:'7750001',stock:30,lowStockAt:8},
+    {id:10,name:'Galletas',emoji:'🍪',price:0.25,category:'Snacks',barcode:'7750002',stock:40,lowStockAt:8},
+    {id:11,name:'Esfero',emoji:'🖊️',price:0.35,category:'Papelería',barcode:'PAP001',stock:60,lowStockAt:10},
+    {id:12,name:'Lápiz',emoji:'✏️',price:0.25,category:'Papelería',barcode:'PAP002',stock:60,lowStockAt:10},
+    {id:13,name:'Cuaderno 50h',emoji:'📓',price:1.50,category:'Papelería',barcode:'PAP003',stock:20,lowStockAt:5},
+    {id:14,name:'Cuaderno 100h',emoji:'📔',price:2.50,category:'Papelería',barcode:'PAP004',stock:15,lowStockAt:3},
+    {id:15,name:'Marcador',emoji:'🖋️',price:0.50,category:'Papelería',barcode:'PAP005',stock:25,lowStockAt:5},
+    {id:16,name:'Huevo x6',emoji:'🥚',price:1.20,category:'Abarrotes',barcode:'ABR001',stock:30,lowStockAt:6},
+    {id:17,name:'Arroz 1Kg',emoji:'🍚',price:0.90,category:'Abarrotes',barcode:'ABR002',stock:20,lowStockAt:5},
+    {id:18,name:'Aceite 1L',emoji:'🫙',price:2.50,category:'Abarrotes',barcode:'ABR003',stock:15,lowStockAt:3},
+    {id:19,name:'Azúcar 1Kg',emoji:'🧂',price:1.00,category:'Abarrotes',barcode:'ABR004',stock:20,lowStockAt:5},
+    {id:20,name:'Jabón baño',emoji:'🧼',price:0.75,category:'Aseo',barcode:'ASE001',stock:25,lowStockAt:5},
+    {id:21,name:'Shampoo sachet',emoji:'🧴',price:0.35,category:'Aseo',barcode:'ASE002',stock:40,lowStockAt:8},
+    {id:22,name:'Detergente 500g',emoji:'🫧',price:1.50,category:'Aseo',barcode:'ASE003',stock:15,lowStockAt:3},
+    {id:23,name:'Papel higiénico',emoji:'🧻',price:0.50,category:'Aseo',barcode:'ASE004',stock:30,lowStockAt:5},
+  ]);
+  if(!DB.get('sales')) DB.set('sales',[]);
+  if(!DB.get('fiados')) DB.set('fiados',[]);
+}
+
+let currentUser=null,cart={},activeCategory='Todos',paymentMethod='cash',pendingSale=null;
+initData();
+
+function doLogin(){
+  const u=document.getElementById('loginUser').value.trim();
+  const p=document.getElementById('loginPass').value.trim();
+  const user=(DB.get('users')||[]).find(x=>x.username===u&&x.password===p);
+  if(!user){document.getElementById('loginError').style.display='block';return;}
+  currentUser=user;
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('appShell').style.display='flex';
+  document.getElementById('roleBadge').textContent=user.role==='admin'?'👑 Admin':'👤 Cajero';
+  document.getElementById('topDate').textContent=new Date().toLocaleDateString('es-EC',{weekday:'long',day:'numeric',month:'long'});
+  if(user.role==='admin') document.querySelectorAll('.admin-only').forEach(el=>el.style.display='');
+  document.getElementById('dateFilter').value=new Date().toISOString().split('T')[0];
+  renderAll(); checkStockAlerts();
+  setTimeout(updateConnIndicator, 2000);
+  // Set default dates for reportes
+  const todayStr = new Date().toISOString().split('T')[0];
+  setTimeout(()=>{
+    ['resumenFechaInicio','resumenFechaFin',
+     'histFechaInicio','histFechaFin',
+     'reporteFechaInicio','reporteFechaFin',
+     'anuladasFechaInicio','anuladasFechaFin'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.value = todayStr;
+    });
+  }, 500);
+  // Sync users to Firebase on login
+  setTimeout(()=>{
+    if(fsdb && isOnline){
+      getUsers().forEach(u => fbSave('users', u.id, u));
+    }
+  }, 3000);
+}
+function doLogout(){
+  currentUser=null;cart={};
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('appShell').style.display='none';
+  document.getElementById('loginUser').value='';
+  document.getElementById('loginPass').value='';
+  document.getElementById('loginError').style.display='none';
+}
+document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+document.getElementById('loginUser').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginPass').focus()});
+
+function goTab(tab){
+  ['vender','historial','resumen','fiados','clientes','inventario','reportes','admin'].forEach(t=>{
+    const el=document.getElementById('tab-'+t);
+    if(el) el.style.display=t===tab?'block':'none';
+  });
+  document.querySelectorAll('.nav-tab').forEach((el,i)=>{
+    el.classList.toggle('active',['vender','historial','resumen','fiados','clientes','inventario','reportes','admin'][i]===tab);
+  });
+  document.getElementById('ticketPanel').style.display=tab==='vender'?'block':'none';
+  if(tab==='vender') setTimeout(populateClientesSelect, 200);
+  if(tab==='historial') renderHistorial();
+  if(tab==='resumen') renderResumen();
+  if(tab==='fiados') renderFiados();
+  if(tab==='clientes') renderClientes();
+  if(tab==='clientes') renderClientes();
+  if(tab==='inventario') renderInventario();
+  if(tab==='reportes') renderReportes();
+  if(tab==='admin'){renderUsers();renderAdminProducts();}
+}
+
+function getClientes(){return DB.get('clientes')||[];}
+function getConfigPuntos(){return DB.get('configPuntos')||{puntoPorDolar:0.5,metaPuntos:100,premio:'Premio sorpresa'};}
+function getClientes(){return DB.get('clientes')||[]}
+function getPuntosConfig(){return DB.get('puntosConfig')||{dolarPorPunto:1, metaPuntos:100, premio:'Producto gratis a elegir'}}
+function getProducts(){return DB.get('products')||[]}
+function getSales(){return DB.get('sales')||[]}
+function getUsers(){return DB.get('users')||[]}
+function getFiados(){return DB.get('fiados')||[]}
+function getLowStock(){return getProducts().filter(p=>p.stock>=0&&p.stock<=(p.lowStockAt||5))}
+
+function checkStockAlerts(){
+  const low=getLowStock();
+  const b=document.getElementById('stockAlertBanner');
+  if(low.length){b.style.display='block';b.innerHTML=`⚠️ <b>${low.length} producto${low.length>1?'s':''} con stock bajo</b>: ${low.map(p=>p.name).join(', ')} — <u>Ver detalles</u>`;}
+  else b.style.display='none';
+}
+
+function renderCategories(){
+  const cats=['Todos',...new Set(getProducts().map(p=>p.category))];
+  document.getElementById('catScroll').innerHTML=cats.map(c=>`<div class="cat-pill ${c===activeCategory?'active':''}" onclick="setCategory('${c}')">${c}</div>`).join('');
+}
+function setCategory(c){activeCategory=c;renderCategories();renderProducts();}
+function filterProducts(){renderProducts();}
+
+function renderProducts(){
+  const q=(document.getElementById('searchInput').value||'').toLowerCase();
+  const prods=getProducts().filter(p=>{
+    const mc=activeCategory==='Todos'||p.category===activeCategory;
+    const mq=!q||p.name.toLowerCase().includes(q)||p.barcode.toLowerCase().includes(q);
+    return mc&&mq;
+  });
+  const grid=document.getElementById('prodGrid');
+  if(!prods.length){grid.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="ei">🔍</div><p>Sin resultados</p></div>';return;}
+  grid.innerHTML=prods.map(p=>{
+    const qty=cart[p.id]?cart[p.id].qty:0;
+    const isLow=p.stock>=0&&p.stock<=(p.lowStockAt||5)&&p.stock>0;
+    const isOut=p.stock===0;
+    return `<div class="prod-card ${isOut?'out-of-stock':''} ${isLow?'low-stock':''}" onclick="addToCart(${p.id})">
+      <div class="pc-count ${qty>0?'show':''}" id="cnt-${p.id}">${qty}</div>
+      <span class="pc-emoji">${p.emoji}</span>
+      <div class="pc-name">${p.name}</div>
+      <div class="pc-price">$${p.price.toFixed(2)}</div>
+    </div>`;
+  }).join('');
+}
+
+function focusBarcode(){document.getElementById('searchInput').focus();showToast('🔫 Lista para escanear');}
+function handleBarcode(e){
+  if(e.key==='Enter'){
+    const val=document.getElementById('searchInput').value.trim();
+    if(!val) return;
+    const prod=getProducts().find(p=>p.barcode===val||p.name.toLowerCase()===val.toLowerCase());
+    if(prod){addToCart(prod.id);document.getElementById('searchInput').value='';setTimeout(()=>document.getElementById('searchInput').focus(),100);}
+    else showToast('⚠️ No encontrado: '+val);
+  }
+}
+
+function addToCart(id){
+  const prod=getProducts().find(p=>p.id===id);
+  if(!prod) return;
+  if(!cart[id]) cart[id]={...prod,qty:0};
+  cart[id].qty++;
+  updateCartUI();
+  const cnt=document.getElementById('cnt-'+id);
+  if(cnt){cnt.textContent=cart[id].qty;cnt.classList.add('show');}
+}
+function changeQty(id,d){
+  if(!cart[id]) return;
+  cart[id].qty+=d;
+  if(cart[id].qty<=0){delete cart[id];const c=document.getElementById('cnt-'+id);if(c){c.textContent='0';c.classList.remove('show');}}
+  else{const c=document.getElementById('cnt-'+id);if(c)c.textContent=cart[id].qty;}
+  updateCartUI();
+}
+function removeFromCart(id){
+  delete cart[id];const c=document.getElementById('cnt-'+id);if(c){c.textContent='0';c.classList.remove('show');}updateCartUI();
+}
+function getDiscount(sub){
+  const val=parseFloat(document.getElementById('discountVal').value)||0;
+  const type=document.getElementById('discountType').value;
+  if(!val) return 0;
+  return type==='pct'?sub*(val/100):Math.min(val,sub);
+}
+function setPayment(m){
+  paymentMethod=m;
+  ['cash','transfer','card','credit'].forEach(x=>document.getElementById('pay-'+x).classList.toggle('active',x===m));
+}
+function updateCartUI(){
+  const items=Object.values(cart);
+  const sub=items.reduce((s,i)=>s+(i.price*i.qty),0);
+  const disc=getDiscount(sub);
+  const total=sub-disc;
+  document.getElementById('totalPill').textContent='$'+total.toFixed(2);
+  document.getElementById('ticketTotalAmt').textContent='$'+total.toFixed(2);
+  document.getElementById('subtotalAmt').textContent='$'+sub.toFixed(2);
+  document.getElementById('ticketCount').textContent=items.reduce((s,i)=>s+i.qty,0)+' items';
+  if(disc>0){
+    document.getElementById('discountRow').style.display='flex';
+    document.getElementById('discountAmt').textContent='-$'+disc.toFixed(2);
+    document.getElementById('discountLine').textContent='-$'+disc.toFixed(2);
+  } else {
+    document.getElementById('discountRow').style.display='none';
+    document.getElementById('discountLine').textContent='';
+  }
+  const body=document.getElementById('ticketBody');
+  if(!items.length){body.innerHTML='<div style="text-align:center;color:var(--muted);font-size:13px;padding:8px">Toca un producto para agregar</div>';return;}
+  body.innerHTML=items.map(i=>`
+    <div class="ticket-line">
+      <span class="tl-name">${i.emoji} ${i.name}</span>
+      <div class="tl-qty"><button onclick="changeQty(${i.id},-1)">−</button><span>${i.qty}</span><button onclick="changeQty(${i.id},1)">+</button></div>
+      <span class="tl-price">$${(i.price*i.qty).toFixed(2)}</span>
+      <span class="tl-del" onclick="removeFromCart(${i.id})">✕</span>
+    </div>`).join('');
+}
+function cobrar(){
+  if(!Object.keys(cart).length){showToast('⚠️ Agrega productos primero');return;}
+  _procesarCobro();
+}
+
+let pendingClienteId = null;
+
+function showClienteSelector(){
+  const clientes = getClientes();
+  const items=Object.values(cart);
+  const sub=items.reduce((s,i)=>s+(i.price*i.qty),0);
+  const disc=getDiscount(sub);
+  const total=sub-disc;
+  openModalContent(`
+    <h3>👥 Cliente</h3>
+    <div style="background:#E3F2FD;border-radius:12px;padding:10px 14px;text-align:center;margin-bottom:14px">
+      <div style="font-size:11px;color:#1565C0;font-weight:700">TOTAL</div>
+      <div style="font-size:28px;font-weight:800;color:#1565C0;font-family:'DM Mono',monospace">$${total.toFixed(2)}</div>
+    </div>
+
+    <!-- Checkbox afiliar -->
+    <div style="background:#F3E5F5;border-radius:12px;padding:12px 14px;margin-bottom:14px">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+        <input type="checkbox" id="chkAfiliar" onchange="toggleAfiliarPanel()" style="width:20px;height:20px;cursor:pointer;accent-color:#7B1FA2">
+        <div>
+          <div style="font-size:14px;font-weight:800;color:#7B1FA2">⭐ Afiliar / identificar cliente</div>
+          <div style="font-size:11px;color:#888">Activa para sumar puntos o registrar nuevo cliente</div>
+        </div>
+      </label>
+    </div>
+
+    <!-- Panel cliente (oculto por defecto) -->
+    <div id="afiliarPanel" style="display:none">
+      <!-- Buscar existente -->
+      <div style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Buscar cliente existente</div>
+      <input id="clienteSearch" placeholder="🔍 Nombre, cédula o teléfono..." oninput="filtrarClientesModal()" style="width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:12px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:10px">
+      <div id="clienteModalList" style="max-height:160px;overflow-y:auto;margin-bottom:12px">
+        ${clientes.slice(0,4).map(c=>`
+          <div onclick="seleccionarCliente(${c.id})" style="padding:10px 12px;border:2px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center"
+            onmouseover="this.style.borderColor='var(--g1)';this.style.background='#f9f9f9'" onmouseout="this.style.borderColor='var(--border)';this.style.background='white'">
+            <div>
+              <div style="font-weight:700;font-size:13px">${c.nombre}</div>
+              <div style="font-size:11px;color:var(--muted)">${c.telefono||''} ${c.cedula?'· '+c.cedula:''}</div>
+            </div>
+            <div style="font-size:13px;font-weight:800;color:#7B1FA2">⭐ ${(c.puntos||0).toFixed(1)}</div>
+          </div>`).join('')}
+      </div>
+
+      <!-- Registrar nuevo -->
+      <div style="border-top:2px dashed var(--border);padding-top:12px;margin-top:4px">
+        <div style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:8px">➕ O registrar nuevo cliente</div>
+        <div class="form-group"><label>Nombre</label><input id="nuevoNombre" placeholder="Ej: Juan Pérez"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="form-group"><label>📱 Teléfono</label><input id="nuevoTelefono" placeholder="0991234567" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'')"></div>
+          <div class="form-group"><label>🪪 Cédula</label><input id="nuevoCedula" placeholder="1712345678" maxlength="13" oninput="this.value=this.value.replace(/[^0-9]/g,'')"></div>
+        </div>
+        <button onclick="registrarYSeleccionar()" style="width:100%;background:#7B1FA2;color:white;border:none;border-radius:12px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px">
+          ⭐ Afiliar y registrar venta
+        </button>
+      </div>
+    </div>
+
+    <div class="modal-actions" style="margin-top:12px">
+      <button class="btn-cancel" onclick="cobrarSinCliente()">Sin cliente</button>
+      <button class="btn-confirm" onclick="cobrarSinCliente()" style="background:#888">Saltar</button>
+    </div>
+  `);
+}
+
+function toggleAfiliarPanel(){
+  const chk = document.getElementById('chkAfiliar');
+  const panel = document.getElementById('afiliarPanel');
+  if(panel) panel.style.display = chk.checked ? 'block' : 'none';
+}
+
+function registrarYSeleccionar(){
+  const nombre = document.getElementById('nuevoNombre')?.value.trim();
+  const telefono = document.getElementById('nuevoTelefono')?.value.trim()||'';
+  const cedula = document.getElementById('nuevoCedula')?.value.trim()||'';
+  if(!nombre){ showToast('⚠️ Ingresa el nombre'); return; }
+  const clientes = getClientes();
+  // Check if already exists
+  const existe = clientes.find(c=>
+    (cedula && c.cedula===cedula) ||
+    (telefono && c.telefono===telefono) ||
+    c.nombre.toLowerCase()===nombre.toLowerCase()
+  );
+  if(existe){
+    showToast('✅ Cliente encontrado: '+existe.nombre);
+    seleccionarCliente(existe.id);
+    return;
+  }
+  const nuevo = {
+    id: Date.now(),
+    nombre, telefono, cedula,
+    puntos: 0, totalCompras: 0, visitas: 0,
+    fechaRegistro: new Date().toISOString().split('T')[0]
+  };
+  clientes.push(nuevo);
+  DB.set('clientes', clientes);
+  fbSave('clientes_db', 'all', clientes);
+  showToast('✅ Cliente '+nombre+' registrado y afiliado');
+  seleccionarCliente(nuevo.id);
+}
+
+function filtrarClientesModal(){
+  const q = document.getElementById('clienteSearch').value.toLowerCase();
+  const clientes = getClientes().filter(c=>
+    c.nombre.toLowerCase().includes(q)||(c.cedula||'').includes(q)||(c.telefono||'').includes(q)
+  );
+  document.getElementById('clienteModalList').innerHTML = clientes.slice(0,5).map(c=>`
+    <div onclick="seleccionarCliente(${c.id})" style="padding:10px 12px;border:2px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center"
+      onmouseover="this.style.borderColor='var(--g1)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div>
+        <div style="font-weight:700;font-size:13px">${c.nombre}</div>
+        <div style="font-size:11px;color:var(--muted)">${c.telefono||''} ${c.cedula?'· '+c.cedula:''}</div>
+      </div>
+      <div style="font-size:13px;font-weight:800;color:var(--g1)">⭐ ${(c.puntos||0).toFixed(1)}</div>
+    </div>`).join('') || '<div style="text-align:center;color:var(--muted);padding:10px;font-size:13px">Sin resultados</div>';
+}
+
+function seleccionarCliente(id){
+  pendingClienteId = id;
+  closeModal();
+  _procesarCobro();
+}
+
+function cobrarSinCliente(){
+  pendingClienteId = null;
+  closeModal();
+  _procesarCobro();
+}
+
+function _procesarCobro(){
+  const items=Object.values(cart);
+  const sub=items.reduce((s,i)=>s+(i.price*i.qty),0);
+  const disc=getDiscount(sub);
+  const total=sub-disc;
+  const dv=parseFloat(document.getElementById('discountVal').value)||0;
+  const dt=document.getElementById('discountType').value;
+  const now=new Date();
+  pendingSale={
+    id:Date.now(),date:now.toISOString().split('T')[0],time:now.toTimeString().slice(0,5),
+    user:currentUser.name,userId:currentUser.id,subtotal:sub,discount:disc,total,
+    discountLabel:disc>0?(dt==='pct'?dv+'%':'$'+dv.toFixed(2)):null,
+    paymentMethod,
+    items:items.map(i=>({id:i.id,name:i.name,emoji:i.emoji,qty:i.qty,price:i.price,subtotal:i.price*i.qty}))
+  };
+  if(paymentMethod==='credit'){
+    openModalContent(`
+      <h3>📝 Registrar Fiado</h3>
+      <div class="form-group"><label>Nombre del cliente</label><input id="fiadoClient" placeholder="Ej: Juan Pérez" autofocus></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label>📱 Teléfono</label><input id="fiadoTelefono" placeholder="0991234567" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'')"></div>
+        <div class="form-group"><label>🪪 Cédula</label><input id="fiadoCedula" placeholder="1712345678" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'')"></div>
+      </div>
+      <div class="form-group"><label>Nota (opcional)</label><input id="fiadoNote" placeholder="Ej: Cobrar el viernes"></div>
+      <div style="background:#FFF3E0;border-radius:12px;padding:14px;text-align:center;margin:12px 0">
+        <div style="font-size:12px;color:var(--warn);font-weight:700">TOTAL A FIAR</div>
+        <div style="font-size:28px;font-weight:800;color:var(--danger);font-family:'DM Mono',monospace">$\${total.toFixed(2)}</div>
+      </div>
+      <div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancelar</button><button class="btn-confirm" onclick="saveFiadoSale()">Confirmar Fiado</button></div>
+    `);
+    return;
+  }
+  if(paymentMethod==='cash'){
+    document.getElementById('changeTotalShow').textContent='$'+total.toFixed(2);
+    document.getElementById('receivedAmt').value='';
+    document.getElementById('changeAmt').textContent='$0.00';
+    document.getElementById('changeOverlay').classList.add('show');
+    setTimeout(()=>document.getElementById('receivedAmt').focus(),100);
+    return;
+  }
+  finalizeSale(pendingSale);
+}
+function calcChange(){
+  const total=pendingSale?pendingSale.total:0;
+  const recv=parseFloat(document.getElementById('receivedAmt').value)||0;
+  const chg=recv-total;
+  const el=document.getElementById('changeAmt');
+  el.textContent=chg>=0?'$'+chg.toFixed(2):'Falta $'+Math.abs(chg).toFixed(2);
+  el.style.color=chg>=0?'var(--acc)':'var(--danger)';
+}
+function confirmCobro(){
+  const recv=parseFloat(document.getElementById('receivedAmt').value)||0;
+  if(recv<pendingSale.total){showToast('⚠️ El monto es menor al total');return;}
+  pendingSale.received=recv;pendingSale.change=recv-pendingSale.total;
+  closeChange();finalizeSale(pendingSale);
+}
+function closeChange(){document.getElementById('changeOverlay').classList.remove('show');}
+function saveFiadoSale(){
+  const client=document.getElementById('fiadoClient').value.trim();
+  const note=document.getElementById('fiadoNote').value.trim();
+  const telefono=(document.getElementById('fiadoTelefono')?.value||'').trim();
+  const cedula=(document.getElementById('fiadoCedula')?.value||'').trim();
+  if(!client){showToast('⚠️ Ingresa el nombre');return;}
+  pendingSale.fiadoClient=client;
+  pendingSale.fiadoNote=note;
+  pendingSale.fiadoTelefono=telefono;
+  pendingSale.fiadoCedula=cedula;
+  const fiados=getFiados();
+  const existing=fiados.find(f=>f.client.toLowerCase()===client.toLowerCase()&&!f.paid);
+  const today=pendingSale.date;
+  if(existing){
+    existing.entries.push({date:today,amount:pendingSale.total,note});
+    existing.total+=pendingSale.total;
+    if(telefono) existing.telefono=telefono;
+    if(cedula) existing.cedula=cedula;
+  } else {
+    fiados.push({id:Date.now(),client,telefono,cedula,total:pendingSale.total,paid:false,entries:[{date:today,amount:pendingSale.total,note}]});
+  }
+  DB.set('fiados',fiados);closeModal();finalizeSale(pendingSale);
+}
+function finalizeSale(sale){
+  // Add factura data if present
+  if(pendingFactura){
+    sale.factNombre = pendingFactura.nombre;
+    sale.factCedula = pendingFactura.cedula;
+    pendingFactura = null;
+  }
+  // Add points if client selected
+  if(pendingClienteId){
+    const ptsGanados = sumarPuntosCliente(pendingClienteId, sale.total);
+    sale.clienteId = pendingClienteId;
+    const c = getClientes().find(x=>x.id===pendingClienteId);
+    if(c) sale.clienteNombre = c.nombre;
+    if(ptsGanados) showToast('⭐ +'+ptsGanados.toFixed(1)+' puntos para '+(c?.nombre||'cliente'));
+    pendingClienteId = null;
+  }
+  // Add cliente fidelizacion
+  const clienteId = parseInt(document.getElementById('clienteVentaSelect')?.value)||0;
+  if(clienteId){ sale.clienteId = clienteId; addPuntosCliente(sale); }
+  const sales=getSales();sales.unshift(sale);DB.set('sales',sales);
+  const prods=getProducts();
+  sale.items.forEach(si=>{const p=prods.find(x=>x.id===si.id);if(p&&p.stock>0)p.stock=Math.max(0,p.stock-si.qty);});
+  DB.set('products',prods);
+  // 🔥 Guardar en Firebase (o cola si offline)
+  fbSave('sales', sale.id, sale);
+  prods.forEach(p=>fbSave('products', p.id, p));
+  cart={};document.getElementById('discountVal').value='';setPayment('cash');updateCartUI();
+  document.querySelectorAll('.pc-count').forEach(c=>{c.textContent='0';c.classList.remove('show')});
+  checkStockAlerts();renderProducts();showReceipt(sale);
+}
+function cancelSale(){
+  cart={};document.getElementById('discountVal').value='';
+  document.querySelectorAll('.pc-count').forEach(c=>{c.textContent='0';c.classList.remove('show')});
+  updateCartUI();
+}
+
+function limpiarHistorial(){
+  document.getElementById('histBuscar').value='';
+  renderHistorial();
+}
+function setToday(){
+  const today=new Date().toISOString().split('T')[0];
+  const i=document.getElementById('histFechaInicio');
+  const f=document.getElementById('histFechaFin');
+  if(i) i.value=today; if(f) f.value=today;
+  renderHistorial();
+}
+function setHistorialHoy(){setToday();}
+function getSalesByDate(d){return getSales().filter(s=>s.date===d);}
+function renderHistorial(){
+  const today=new Date().toISOString().split('T')[0];
+  const fechaInicio=document.getElementById('histFechaInicio')?.value||today;
+  const fechaFin=document.getElementById('histFechaFin')?.value||today;
+  const buscar=(document.getElementById('histBuscar')?.value||'').toLowerCase().trim();
+  let sales=getSales().filter(s=>s.date>=fechaInicio&&s.date<=fechaFin);
+  // Apply search filter
+  if(buscar){
+    sales=sales.filter(s=>
+      // By comprobante number
+      String(s.id).slice(-6).includes(buscar) ||
+      // By client name (factura or fiado)
+      (s.factNombre||'').toLowerCase().includes(buscar) ||
+      (s.fiadoClient||'').toLowerCase().includes(buscar) ||
+      (s.clienteNombre||'').toLowerCase().includes(buscar) ||
+      // By cedula
+      (s.factCedula||'').includes(buscar) ||
+      (s.fiadoCedula||'').includes(buscar) ||
+      // By product name
+      s.items.some(i=>i.name.toLowerCase().includes(buscar))
+    );
+  }
+  const salesValidas=sales.filter(s=>!s.anulada);
+  const total=salesValidas.reduce((s,v)=>s+v.total,0);
+  const payL={cash:'💵 Efectivo',transfer:'📱 Transf.',card:'💳 Tarjeta',credit:'📝 Fiado'};
+  document.getElementById('historialSummary').innerHTML=sales.length?`
+    <div style="background:var(--g1);color:white;border-radius:14px;padding:14px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+      <div><div style="font-size:11px;opacity:.75">Total del día</div><div style="font-size:26px;font-weight:800;font-family:'DM Mono',monospace;color:var(--acc)">$${total.toFixed(2)}</div></div>
+      <div style="text-align:right"><div style="font-size:11px;opacity:.75">${sales.length} ventas</div></div>
+    </div>`:'' ;
+  const cont=document.getElementById('historialList');
+  if(!sales.length){cont.innerHTML='<div class="empty"><div class="ei">🛒</div><p>Sin ventas en esta fecha</p></div>';return;}
+  cont.innerHTML=sales.map(s=>`
+    <div class="sale-card" style="${s.anulada?'opacity:.55;border-left-color:#999':''}">
+      <div class="sc-top">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="sc-hora">🕐 ${s.time}</span>
+          <span class="sc-user">${s.user}</span>
+          ${s.anulada?'<span style="background:#FFEBEE;color:var(--danger);font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px">🚫 ANULADA</span>':''}
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="sc-total" style="${s.anulada?'text-decoration:line-through;color:#999':''}">$${s.total.toFixed(2)}</span>
+          <button onclick='showReceipt(${JSON.stringify(s)})' style="background:#FFF3CD;border:none;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;color:var(--g1)">🖨️</button>
+          ${currentUser&&currentUser.role==='admin'&&!s.anulada&&!s.devuelta?`<button onclick='abrirDevolucion(${JSON.stringify(s)})' style="background:#E3F2FD;border:none;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;color:#1565C0">🔄</button>`:''}
+          ${currentUser&&currentUser.role==='admin'&&!s.anulada?`<button onclick="anularVenta(${s.id})" style="background:#FFEBEE;border:none;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;color:var(--danger)">🚫</button>`:''}
+        </div>
+      </div>
+      <div class="sc-items">${s.items.map(i=>`${i.qty}× ${i.name}`).join(' · ')}</div>
+      ${s.anulada?`<div style="font-size:11px;color:#999;margin-top:4px">🚫 Anulada por: ${s.anuladaPor||'Admin'} — ${s.anuladaFecha||''} — ${s.anuladaMotivo||''}</div>`:''}
+    </div>
+  `).join('');
+}
+
+function setResumenHoy(){
+  const today = new Date().toISOString().split('T')[0];
+  const i = document.getElementById('resumenFechaInicio');
+  const f = document.getElementById('resumenFechaFin');
+  if(i) i.value = today;
+  if(f) f.value = today;
+  renderResumen();
+}
+
+function renderResumen(){
+  const today=new Date().toISOString().split('T')[0];
+  const fechaInicio = document.getElementById('resumenFechaInicio')?.value || today;
+  const fechaFin = document.getElementById('resumenFechaFin')?.value || today;
+  const allSales = getSales().filter(s=>s.date>=fechaInicio && s.date<=fechaFin);
+  const sales=allSales.filter(s=>!s.anulada);
+  const total=sales.reduce((s,v)=>s+v.total,0);
+  const n=sales.length;const prom=n?total/n:0;const ahorro=total*.2;
+  const label = fechaInicio===fechaFin ? (fechaInicio===today?'hoy':fechaInicio) : fechaInicio+' al '+fechaFin;
+  const chartTitle = document.getElementById('resumenChartTitle');
+  if(chartTitle) chartTitle.textContent = '🏆 Más vendidos — '+label;
+  document.getElementById('kpiGrid').innerHTML=`
+    <div class="kpi-card accent"><div class="kpi-label">💰 Total</div><div class="kpi-val">$${total.toFixed(2)}</div><div class="kpi-sub">${n} ventas · ${label}</div></div>
+    <div class="kpi-card"><div class="kpi-label">📊 Promedio</div><div class="kpi-val">$${prom.toFixed(2)}</div><div class="kpi-sub">por venta</div></div>
+    <div class="kpi-card"><div class="kpi-label">🐷 Ahorro 20%</div><div class="kpi-val">$${ahorro.toFixed(2)}</div><div class="kpi-sub">para inversión</div></div>
+    <div class="kpi-card"><div class="kpi-label">💵 Para caja</div><div class="kpi-val">$${(total-ahorro).toFixed(2)}</div><div class="kpi-sub">disponible</div></div>
+  `;
+  const conteo={};
+  sales.forEach(s=>s.items.forEach(i=>{conteo[i.name]=(conteo[i.name]||0)+i.qty;}));
+  const top=Object.entries(conteo).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const maxV=top[0]?top[0][1]:1;
+  document.getElementById('topChart').innerHTML=top.length?top.map(([nm,qty])=>`
+    <div class="bar-row"><div class="bar-label">${nm}</div><div class="bar-track"><div class="bar-fill" style="width:${qty/maxV*100}%"></div></div><div class="bar-val">${qty}</div></div>`).join(''):'<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">Sin datos aún</div>';
+  const low=getLowStock();
+  const ss=document.getElementById('stockSection');
+  if(low.length){ss.style.display='block';document.getElementById('stockList').innerHTML=low.map(p=>`<div class="stock-item"><span class="si-name">${p.emoji} ${p.name}</span><span class="si-stock">⚠️ Quedan: ${p.stock}</span></div>`).join('');}
+  else ss.style.display='none';
+}
+
+function shareWhatsApp(){
+  const today=new Date().toISOString().split('T')[0];
+  const sales=getSalesByDate(today);
+  const salesValidas=sales.filter(s=>!s.anulada);
+  const total=salesValidas.reduce((s,v)=>s+v.total,0);
+  const ahorro=total*.2;
+  const fiadosHoy=salesValidas.filter(s=>s.paymentMethod==='credit').reduce((s,v)=>s+v.total,0);
+  const low=getLowStock();
+  const d=new Date();
+  let txt=`🏪 *TENTEN MICROMERCADO*\n📅 ${d.toLocaleDateString('es-EC')}\n\n💰 Total: $${total.toFixed(2)}\n🛒 Ventas: ${sales.length}\n🐷 Ahorro 20%: $${ahorro.toFixed(2)}\n💵 Caja: $${(total-ahorro).toFixed(2)}`;
+  if(fiadosHoy>0) txt+=`\n📝 Fiados: $${fiadosHoy.toFixed(2)}`;
+  if(low.length) txt+=`\n\n⚠️ *Stock bajo*: ${low.map(p=>p.name).join(', ')}`;
+  txt+='\n\n✅ ¡Buen día!';
+  if(navigator.share) navigator.share({text:txt});
+  else{navigator.clipboard&&navigator.clipboard.writeText(txt);showToast('📋 Copiado para WhatsApp');}
+}
+
+function limpiarFiltroFiado(){
+  document.getElementById('fiadoFechaFilter').value='';
+  document.getElementById('fiadoEstadoFilter').value='pendiente';
+  document.getElementById('fiadoBuscar').value='';
+  renderFiados();
+}
+
+function renderFiados(){
+  const estadoFilter = document.getElementById('fiadoEstadoFilter')?.value || 'pendiente';
+  const fechaFilter = document.getElementById('fiadoFechaFilter')?.value || '';
+  let allFiados = getFiados();
+
+  // Filter by estado
+  let fiados;
+  if(estadoFilter==='pendiente') fiados = allFiados.filter(f=>!f.paid);
+  else if(estadoFilter==='pagado') fiados = allFiados.filter(f=>f.paid);
+  else fiados = allFiados;
+
+  // Filter by fecha
+  if(fechaFilter){
+    fiados = fiados.filter(f=>f.entries.some(e=>e.date===fechaFilter));
+  }
+
+  // Filter by search (nombre, cedula, telefono)
+  const buscar = (document.getElementById('fiadoBuscar')?.value||'').toLowerCase().trim();
+  if(buscar){
+    fiados = fiados.filter(f=>
+      f.client.toLowerCase().includes(buscar) ||
+      (f.cedula||'').includes(buscar) ||
+      (f.telefono||'').includes(buscar)
+    );
+  }
+
+  const totalDeuda = allFiados.filter(f=>!f.paid).reduce((s,f)=>s+f.total,0);
+  const totalPagado = allFiados.filter(f=>f.paid).reduce((s,f)=>s+f.total,0);
+
+  document.getElementById('fiadoSummary').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div class="fiado-summary" style="border-radius:12px;padding:12px 14px">
+        <div><div class="fs-label">💳 Pendiente</div><div class="fs-val">$${totalDeuda.toFixed(2)}</div></div>
+        <div style="text-align:right"><div class="fs-label">${allFiados.filter(f=>!f.paid).length} clientes</div></div>
+      </div>
+      <div style="background:#E8F5E9;border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center">
+        <div><div style="font-size:11px;color:#2E7D32;font-weight:700">✅ Cobrado</div><div style="font-size:18px;font-weight:800;color:#2E7D32;font-family:'DM Mono',monospace">$${totalPagado.toFixed(2)}</div></div>
+        <div style="text-align:right"><div style="font-size:11px;color:#2E7D32">${allFiados.filter(f=>f.paid).length} clientes</div></div>
+      </div>
+    </div>`;
+
+  const cont=document.getElementById('fiadoList');
+  if(!fiados.length){
+    cont.innerHTML='<div class="empty"><div class="ei">${estadoFilter==="pagado"?"✅":"📝"}</div><p>${estadoFilter==="pagado"?"Sin fiados cobrados":"¡Sin fiados pendientes!"}</p></div>';
+    return;
+  }
+
+  cont.innerHTML=fiados.map(f=>`
+    <div class="fiado-card" style="${f.paid?'border-left-color:#4CAF50;opacity:.8':''}">
+      <div class="fc-top">
+        <div>
+          <span class="fc-name">👤 ${f.client}</span>
+          ${f.paid?'<span style="background:#E8F5E9;color:#2E7D32;font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;margin-left:6px">✅ COBRADO</span>':''}
+        </div>
+        <span class="fc-total" style="${f.paid?'color:#4CAF50':''}">$${f.total.toFixed(2)}</span>
+      </div>
+      <div class="fc-detail">
+        ${f.telefono?`📱 ${f.telefono}`:''} ${f.cedula?`· 🪪 ${f.cedula}`:''}
+        ${(f.telefono||f.cedula)?'<br>':''}
+        ${f.entries.length} compra${f.entries.length>1?'s':''} · Última: ${f.entries[f.entries.length-1].date}
+        ${f.entries[f.entries.length-1].note?' · '+f.entries[f.entries.length-1].note:''}
+        ${f.paid?`<br>✅ Cobrado: ${f.paidDate||''}`:'' }
+      </div>
+      ${!f.paid?`<div class="fc-actions">
+        <button class="btn-pay-fiado" onclick="payFiado(${f.id})">✅ Cobrar todo</button>
+        <button class="btn-pay-fiado" onclick="payFiadoParcial(${f.id})" style="background:#FFF3E0;color:var(--warn)">💵 Cobro parcial</button>
+        <button class="btn-pay-fiado" onclick="openFiadoModal(${f.id})" style="background:#FFEBEE;color:var(--danger)">+ Agregar</button>
+      </div>`:''}
+    </div>`).join('');
+}
+function openFiadoModal(id){
+  const existing = id ? getFiados().find(f=>f.id===id) : null;
+  openModalContent(`
+    <h3>${id?'➕ Agregar al Fiado':'📝 Nuevo Fiado'}</h3>
+    ${!id?`
+    <div class="form-group"><label>Nombre del cliente</label><input id="fNombre" placeholder="Ej: Ana Torres" autofocus></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-group"><label>📱 Teléfono</label><input id="fTelefono" placeholder="Ej: 0991234567" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'')"></div>
+      <div class="form-group"><label>🪪 Cédula</label><input id="fCedula" placeholder="Ej: 1712345678" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'')"></div>
+    </div>`:''}
+    <div class="form-group"><label>Monto ($)</label><input id="fMonto" type="number" step="0.05" min="0" placeholder="0.00"></div>
+    <div class="form-group"><label>Nota</label><input id="fNota" placeholder="Ej: Cobrar el lunes"></div>
+    <div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancelar</button><button class="btn-confirm" onclick="saveFiado(${id||'null'})">Guardar</button></div>
+  `);
+}
+function saveFiado(id){
+  const monto=parseFloat(document.getElementById('fMonto').value)||0;
+  const nota=document.getElementById('fNota').value.trim();
+  if(!monto){showToast('⚠️ Ingresa un monto');return;}
+  const fiados=getFiados();const today=new Date().toISOString().split('T')[0];
+  if(id){const f=fiados.find(x=>x.id===id);f.entries.push({date:today,amount:monto,note:nota});f.total+=monto;}
+  else{const n=document.getElementById('fNombre').value.trim();if(!n){showToast('⚠️ Ingresa el nombre');return;}fiados.push({id:Date.now(),client:n,total:monto,paid:false,entries:[{date:today,amount:monto,note:nota}]});}
+  DB.set('fiados',fiados);
+  const sf=id?fiados.find(x=>x.id===id):fiados[fiados.length-1];
+  if(sf) fbSave('fiados', sf.id, sf);
+  closeModal();renderFiados();showToast('✅ Fiado guardado');
+}
+function payFiado(id){
+  const fiados=getFiados();const f=fiados.find(x=>x.id===id);
+  if(!f) return;
+  openModalContent(`
+    <h3>✅ Cobrar Fiado Completo</h3>
+    <div style="background:#E8F5E9;border-radius:12px;padding:14px;text-align:center;margin-bottom:16px">
+      <div style="font-size:12px;color:#2E7D32;font-weight:700">TOTAL A COBRAR</div>
+      <div style="font-size:32px;font-weight:800;color:#2E7D32;font-family:'DM Mono',monospace">$${f.total.toFixed(2)}</div>
+      <div style="font-size:12px;color:#555;margin-top:4px">Cliente: ${f.client}</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="confirmarPagoTotal(${id})">✅ Confirmar Cobro</button>
+    </div>
+  `);
+}
+
+function confirmarPagoTotal(id){
+  const fiados=getFiados();const f=fiados.find(x=>x.id===id);
+  if(!f) return;
+  const montoTotal = f.total;
+  f.paid=true;
+  f.paidDate=new Date().toISOString().split('T')[0];
+  DB.set('fiados',fiados);
+  saveFiadoToFirebase(f);
+  closeModal();
+  renderFiados();
+  showToast('✅ ¡Fiado cobrado!');
+  // Show payment receipt
+  showFiadoReceipt(f, montoTotal, 'total');
+}
+function payFiadoParcial(id){
+  openModalContent(`
+    <h3>💵 Cobro Parcial</h3>
+    <div class="form-group"><label>Monto cobrado ($)</label><input id="pMonto" type="number" step="0.05" min="0" placeholder="0.00" autofocus></div>
+    <div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancelar</button><button class="btn-confirm" onclick="applyPartial(${id})">Aplicar</button></div>
+  `);
+}
+function applyPartial(id){
+  const m=parseFloat(document.getElementById('pMonto').value)||0;
+  if(!m){showToast('⚠️ Ingresa un monto');return;}
+  const fiados=getFiados();const f=fiados.find(x=>x.id===id);
+  const deudaAnterior = f.total;
+  f.total=Math.max(0,f.total-m);
+  if(f.total===0) f.paid=true;
+  // Register abono in entries
+  f.entries.push({
+    date: new Date().toISOString().split('T')[0],
+    amount: -m,
+    note: 'Abono $'+m.toFixed(2)
+  });
+  DB.set('fiados',fiados);
+  saveFiadoToFirebase(f);
+  closeModal();
+  renderFiados();
+  showToast('✅ Abono de $'+m.toFixed(2)+' aplicado');
+  // Show payment receipt
+  showFiadoReceipt(f, m, f.total===0?'total':'parcial', deudaAnterior);
+}
+
+function showFiadoReceipt(f, montoPagado, tipo, deudaAnterior){
+  const fecha = new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const hora = new Date().toLocaleTimeString('es-EC',{hour:'2-digit',minute:'2-digit'});
+  const saldoPendiente = tipo==='total' ? 0 : f.total;
+
+  document.getElementById('receiptContent').innerHTML=`
+    <div class="receipt-store-name">TENTEN MICROMERCADO</div>
+    <div class="receipt-tagline">Comprobante de ${tipo==='total'?'Pago Total':'Abono'}</div>
+    <hr class="receipt-divider">
+    <div class="receipt-meta">
+      <div>Fecha: ${fecha} ${hora}</div>
+      <div>Comprobante #${String(Date.now()).slice(-6)}</div>
+    </div>
+    <hr class="receipt-divider">
+    <div style="padding:4px 0">
+      <div style="display:flex;justify-content:space-between;font-size:9px;margin-bottom:3px">
+        <span style="font-weight:700">Cliente:</span>
+        <span>${f.client}</span>
+      </div>
+      ${f.telefono?`<div style="display:flex;justify-content:space-between;font-size:9px;margin-bottom:3px"><span style="font-weight:700">Teléfono:</span><span>${f.telefono}</span></div>`:''}
+      ${f.cedula?`<div style="display:flex;justify-content:space-between;font-size:9px;margin-bottom:3px"><span style="font-weight:700">Cédula:</span><span>${f.cedula}</span></div>`:''}
+    </div>
+    <hr class="receipt-divider">
+    <div style="padding:4px 0">
+      ${deudaAnterior?`<div style="display:flex;justify-content:space-between;font-size:9px;margin-bottom:3px;color:#555"><span>Deuda anterior:</span><span>$${deudaAnterior.toFixed(2)}</span></div>`:''}
+      <div style="display:flex;justify-content:space-between;font-size:9px;margin-bottom:3px;color:#2E7D32;font-weight:700"><span>${tipo==='total'?'Pago total:':'Abono:'}</span><span>-$${montoPagado.toFixed(2)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:800;border-top:1px solid #ddd;padding-top:4px;margin-top:4px">
+        <span>Saldo pendiente:</span>
+        <span style="color:${saldoPendiente===0?'#2E7D32':'var(--danger)'}">$${saldoPendiente.toFixed(2)}</span>
+      </div>
+    </div>
+    <div class="receipt-total-row">
+      <span class="receipt-total-label">${tipo==='total'?'✅ PAGADO':'💵 ABONO'}</span>
+      <span class="receipt-total-val" style="color:${tipo==='total'?'#2E7D32':'#1565C0'}">$${montoPagado.toFixed(2)}</span>
+    </div>
+    ${tipo==='parcial'?`
+    <hr class="receipt-divider">
+    <div style="margin-top:16px;border-top:1px solid #333;padding-top:4px;text-align:center;font-size:8px;color:#555">
+      <div style="margin-bottom:20px">Firma del cliente</div>
+      <div>──────────────</div>
+      <div style="font-size:8px;margin-top:3px">Abono $${montoPagado.toFixed(2)} — Saldo: $${saldoPendiente.toFixed(2)}</div>
+      <div style="font-size:8px">Fecha: ${fecha}</div>
+    </div>`:''}
+    <div class="receipt-footer-txt">TENTEN MICROMERCADO<br>${tipo==='total'?'¡Gracias por saldar su deuda!':'Gracias por su abono 😊'}</div>
+  `;
+  document.getElementById('receiptOverlay').classList.add('show');
+}
+
+function showReceipt(sale){
+  const d=new Date(sale.id);
+  const fecha=d.toLocaleDateString('es-EC',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const hora=d.toLocaleTimeString('es-EC',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const payL={cash:'Efectivo',transfer:'Transferencia',card:'Tarjeta',credit:'Fiado'};
+  const changeRow=sale.received?`<div style="display:flex;justify-content:space-between;font-size:9px;color:#555;margin-top:3px"><span>Recibido:</span><span>$${sale.received.toFixed(2)}</span></div><div style="display:flex;justify-content:space-between;font-size:9px;color:#555"><span>Cambio:</span><span>$${sale.change.toFixed(2)}</span></div>`:'';
+  document.getElementById('receiptContent').innerHTML=`
+    <div class="receipt-store-name">TENTEN MICROMERCADO</div>
+    <div class="receipt-tagline">Tu tienda de confianza · Ecuador</div>
+    <hr class="receipt-divider">
+    <div class="receipt-meta">
+      <div>Fecha: ${fecha} ${hora}</div>
+      <div>Comprobante #${String(sale.id).slice(-6)}</div>
+      <div>Atendido por: ${sale.user}</div>
+      <div>Pago: ${payL[sale.paymentMethod]||sale.paymentMethod}</div>
+      ${sale.fiadoClient?`<div>Cliente: ${sale.fiadoClient}</div>`:''}
+      ${sale.factNombre?`<hr style="border:none;border-top:1px dashed #bbb;margin:6px 0"><div style="font-weight:700;font-size:8px;color:#333">DATOS DE FACTURACIÓN:</div><div>Nombre: ${sale.factNombre}</div><div>Cédula/RUC: ${sale.factCedula}</div>`:''}
+    </div>
+    <hr class="receipt-divider">
+    <div class="receipt-col-hdr"><span style="flex:1">Producto</span><span style="width:22px;text-align:center">Qty</span><span style="width:38px;text-align:right">P.U.</span><span style="width:42px;text-align:right">Total</span></div>
+    ${sale.items.map(i=>`<div class="receipt-item"><span class="ri-name">${i.name}</span><span class="ri-qty">${i.qty}</span><span class="ri-price">$${i.price.toFixed(2)}</span><span class="ri-sub">$${i.subtotal.toFixed(2)}</span></div>`).join('')}
+    ${sale.discount>0?`<div style="display:flex;justify-content:space-between;font-size:9px;color:#888;margin-top:4px;padding-top:4px;border-top:1px dashed #ddd"><span>Dcto. (${sale.discountLabel})</span><span>-$${sale.discount.toFixed(2)}</span></div>`:''}
+    <div class="receipt-total-row"><span class="receipt-total-label">TOTAL</span><span class="receipt-total-val">$${sale.total.toFixed(2)}</span></div>
+    ${changeRow}
+    ${sale.paymentMethod==='credit'?`
+    <hr class="receipt-divider">
+    <div style="font-size:8px;color:#555;margin-bottom:12px">
+      <div style="margin-bottom:4px"><b>Cliente:</b> ${sale.fiadoClient||''}</div>
+      ${sale.fiadoTelefono?`<div><b>Teléfono:</b> ${sale.fiadoTelefono}</div>`:''}
+      ${sale.fiadoCedula?`<div><b>Cédula:</b> ${sale.fiadoCedula}</div>`:''}
+      ${sale.fiadoNote?`<div><b>Nota:</b> ${sale.fiadoNote}</div>`:''}
+    </div>
+    <div style="margin-top:16px;border-top:1px solid #333;padding-top:4px;text-align:center;font-size:8px;color:#555">
+      <div style="margin-bottom:20px">Firma del cliente</div>
+      <div>──────────────</div>
+      <div style="font-size:8px;margin-top:3px">Acepto deuda $${sale.total.toFixed(2)} con TENTEN</div>
+      <div style="font-size:8px">Fecha: ${fecha}</div>
+    </div>`:''}
+    ${sale.clienteId ? (() => {
+      const c = getClientes().find(x=>x.id===sale.clienteId);
+      const cfg = getPuntosConfig();
+      if(!c) return '';
+      const puntos = c.puntos||0;
+      const pct = Math.min(100,(puntos/cfg.metaPuntos)*100).toFixed(0);
+      const listo = puntos >= cfg.metaPuntos;
+      return `
+      <hr class="receipt-divider">
+      <div style="text-align:center;padding:6px 0">
+        <div style="font-size:9px;font-weight:800;color:#555;margin-bottom:3px">* PUNTOS DE FIDELIDAD</div>
+        <div style="font-size:14px;font-weight:800;color:#7B1FA2">${puntos.toFixed(1)} puntos</div>
+        <div style="font-size:8px;color:#888;margin:3px 0">Meta: ${cfg.metaPuntos} pts para tu premio</div>
+        <div style="background:#f0f0f0;border-radius:6px;height:8px;margin:6px 4px;overflow:hidden">
+          <div style="width:${pct}%;height:100%;background:#7B1FA2;border-radius:6px"></div>
+        </div>
+        <div style="font-size:8px;color:#888">${pct}% completado</div>
+        ${listo?'<div style="font-size:9px;font-weight:800;color:#7B1FA2;margin-top:3px">* PREMIO DISPONIBLE!</div>':''}
+        <div style="font-size:8px;color:#aaa;margin-top:3px">Premio: ${cfg.premio}</div>
+      </div>`;
+    })() : ''}
+    <div class="receipt-footer-txt">¡Gracias por su compra!<br>Vuelva pronto 😊<br>──────────────<br>TENTEN MICROMERCADO</div>
+  `;
+  document.getElementById('receiptOverlay').classList.add('show');
+}
+function printReceipt(){
+  // Aplicar escala 85% para impresora térmica 58mm
+  const style = document.createElement('style');
+  style.id = '_printScale';
+  style.textContent = '@media print { #printArea { transform: scale(0.85); transform-origin: top left; } }';
+  document.head.appendChild(style);
+  // Mover el printArea fuera del overlay para que @media print lo vea correctamente
+  const printArea = document.getElementById('printArea');
+  const overlay = document.getElementById('receiptOverlay');
+  const placeholder = document.createElement('div');
+  placeholder.id = '_printPlaceholder';
+  overlay.insertBefore(placeholder, printArea);
+  document.body.appendChild(printArea);
+  window.print();
+  // Devolver al lugar original
+  overlay.insertBefore(printArea, placeholder);
+  placeholder.remove();
+  document.getElementById('_printScale').remove();
+}
+function closeReceipt(){document.getElementById('receiptOverlay').classList.remove('show');showToast('✅ Venta registrada');}
+document.getElementById('receiptOverlay').addEventListener('click',function(e){if(e.target===this)closeReceipt();});
+
+function renderUsers(){
+  document.getElementById('userList').innerHTML=getUsers().map(u=>`
+    <div class="user-card">
+      <div class="uc-info"><div class="uc-name">${u.role==='admin'?'👑':'👤'} ${u.name}</div><div class="uc-role">@${u.username} · ${u.role}</div></div>
+      <div class="uc-actions">
+        <button class="btn-edit" onclick="editUser(${u.id})">✏️</button>
+        ${u.id!==currentUser.id?`<button class="btn-del" onclick="deleteUser(${u.id})">🗑️</button>`:''}
+      </div>
+    </div>`).join('');
+}
+function editUser(id){
+  const u=getUsers().find(x=>x.id===id)||{id:null,name:'',username:'',password:'',role:'cajero'};
+  openModalContent(`
+    <h3>${id?'✏️ Editar Usuario':'➕ Nuevo Usuario'}</h3>
+    <div class="form-group"><label>Nombre</label><input id="mName" value="${u.name}" placeholder="Ej: María García"></div>
+    <div class="form-group"><label>Usuario</label><input id="mUser" value="${u.username}" placeholder="ej: cajero2"></div>
+    <div class="form-group"><label>Contraseña</label>
+        <div style="position:relative">
+          <input id="mPass" type="password" placeholder="${id?'Vacío = no cambiar':'Nueva contraseña'}" style="width:100%;padding:13px 44px 13px 16px;border:2px solid var(--border);border-radius:12px;font-size:15px;font-family:'DM Sans',sans-serif;outline:none">
+          <span onclick="togglePass('mPass',this)" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:20px;user-select:none">👁️</span>
+        </div></div>
+    <div class="form-group"><label>Rol</label><select id="mRole"><option value="cajero" ${u.role==='cajero'?'selected':''}>👤 Cajero</option><option value="admin" ${u.role==='admin'?'selected':''}>👑 Admin</option></select></div>
+    <div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancelar</button><button class="btn-confirm" onclick="saveUser(${id||'null'})">Guardar</button></div>
+  `);
+}
+function saveUser(id){
+  const name=document.getElementById('mName').value.trim();const username=document.getElementById('mUser').value.trim();
+  const pass=document.getElementById('mPass').value.trim();const role=document.getElementById('mRole').value;
+  if(!name||!username){showToast('⚠️ Completa los campos');return;}
+  const users=getUsers();
+  if(id){const u=users.find(x=>x.id===id);u.name=name;u.username=username;u.role=role;if(pass)u.password=pass;}
+  else{if(!pass){showToast('⚠️ Ingresa contraseña');return;}users.push({id:Date.now(),name,username,password:pass,role});}
+  DB.set('users',users);
+  // Guardar usuarios en Firebase
+  const savedUser = id ? users.find(x=>x.id===id) : users[users.length-1];
+  if(savedUser) fbSave('users', savedUser.id, savedUser);
+  closeModal();renderUsers();showToast('✅ Usuario guardado');
+}
+function deleteUser(id){
+  if(!confirm('¿Eliminar usuario?')) return;
+  DB.set('users',getUsers().filter(u=>u.id!==id));
+  fbDelete('users', id);
+  renderUsers();showToast('🗑️ Eliminado');
+}
+function renderAdminProducts(){
+  const q=(document.getElementById('adminSearch').value||'').toLowerCase();
+  const prods=getProducts().filter(p=>!q||p.name.toLowerCase().includes(q)||p.barcode.toLowerCase().includes(q));
+  document.getElementById('adminProductList').innerHTML=prods.map(p=>`
+    <div class="prod-row">
+      <div class="pr-info"><div class="pr-name">${p.emoji} ${p.name}</div><div class="pr-meta">${p.category} · Cód: ${p.barcode} · Stock: ${p.stock<0?'∞':p.stock} · Alerta en ≤${p.lowStockAt||5}</div></div>
+      <div class="pr-price">$${p.price.toFixed(2)}</div>
+      <div style="display:flex;gap:6px"><button class="btn-edit" onclick="editProduct(${p.id})">✏️</button><button class="btn-del" onclick="deleteProduct(${p.id})">🗑️</button></div>
+    </div>`).join('');
+}
+function editProduct(id){
+  const prods=getProducts();
+  const p=prods.find(x=>x.id===id)||{id:null,name:'',emoji:'📦',price:0,category:'Varios',barcode:'',stock:10,lowStockAt:5};
+  const cats=[...new Set(prods.map(x=>x.category))];
+  const costVal = p.costPrice||0;
+  openModalContent(`
+    <h3>${id?'✏️ Editar Producto':'➕ Nuevo Producto'}</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-group"><label>Emoji</label><input id="pEmoji" value="${p.emoji}" maxlength="4"></div>
+      <div class="form-group"><label>Categoría</label><input id="pCat" list="catList" value="${p.category}"><datalist id="catList">${cats.map(c=>`<option value="${c}">`).join('')}</datalist></div>
+    </div>
+    <div class="form-group"><label>Nombre del producto</label><input id="pName" value="${p.name}" placeholder="Ej: Coca Cola 600ml" autofocus></div>
+    <div style="background:#F0F9FF;border-radius:12px;padding:12px;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#1565C0;margin-bottom:10px">💰 Precios</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group" style="margin:0">
+          <label>🏭 PVP Proveedor ($)</label>
+          <input id="pCost" type="number" step="0.01" min="0" value="${costVal}" oninput="calcGanancia()" placeholder="0.00">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>🏷️ PVP Público ($)</label>
+          <input id="pPrice" type="number" step="0.05" min="0" value="${p.price}" oninput="calcGanancia()" placeholder="0.00">
+        </div>
+      </div>
+      <div style="margin-top:10px;padding:10px;background:white;border-radius:10px;display:flex;justify-content:space-between;align-items:center;font-size:13px">
+        <span style="color:#666">💰 Ganancia por unidad:</span>
+        <span id="gananciaVal" style="font-weight:800;font-family:'DM Mono',monospace;color:var(--g1)">$0.00 (0%)</span>
+      </div>
+    </div>
+    <div class="form-group"><label>Código de barras</label><input id="pBarcode" value="${p.barcode}" placeholder="Escanea o escribe"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-group"><label>Stock actual (-1 = ilimitado)</label><input id="pStock" type="number" value="${p.stock}"></div>
+      <div class="form-group"><label>⚠️ Alertar cuando queden</label><input id="pLow" type="number" min="0" value="${p.lowStockAt||5}"></div>
+    </div>
+    <div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancelar</button><button class="btn-confirm" onclick="saveProduct(${id||'null'})">💾 Guardar</button></div>
+  `);
+  setTimeout(()=>calcGanancia(), 100);
+}
+function saveProduct(id){
+  const name=document.getElementById('pName').value.trim();
+  const price=parseFloat(document.getElementById('pPrice').value)||0;
+  const costPrice=parseFloat(document.getElementById('pCost')?.value)||0;
+  const emoji=document.getElementById('pEmoji').value.trim()||'📦';
+  const category=document.getElementById('pCat').value.trim()||'Varios';
+  const barcode=document.getElementById('pBarcode').value.trim();
+  const stock=parseInt(document.getElementById('pStock').value)||0;
+  const lowStockAt=parseInt(document.getElementById('pLow').value)||5;
+  if(!name){showToast('⚠️ Ingresa el nombre');return;}
+  const prods=getProducts();
+  if(id) Object.assign(prods.find(x=>x.id===id),{name,price,costPrice,emoji,category,barcode,stock,lowStockAt});
+  else prods.push({id:Date.now(),name,price,costPrice,emoji,category,barcode,stock,lowStockAt});
+  DB.set('products',prods);
+  const sp=id?prods.find(x=>x.id===id):prods[prods.length-1];
+  if(sp) fbSave('products', sp.id, sp);
+  closeModal();renderAdminProducts();renderCategories();renderProducts();checkStockAlerts();
+  showToast('✅ Producto guardado');
+}
+function deleteProduct(id){
+  if(!confirm('¿Eliminar producto?')) return;
+  DB.set('products',getProducts().filter(p=>p.id!==id));
+  fbDelete('products', id);
+  renderAdminProducts();renderProducts();showToast('🗑️ Eliminado');
+}
+function openModal(type){if(type==='user')editUser(null);else editProduct(null);}
+function openModalContent(html){
+  document.getElementById('modalBox').innerHTML=html;
+  document.getElementById('modalOverlay').classList.add('show');
+  setTimeout(()=>{const f=document.querySelector('#modalBox input');if(f)f.focus();},100);
+}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('show');}
+document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+// ============================================================
+// IMPORTAR PRODUCTOS DESDE EXCEL
+// ============================================================
+async function importFromExcel(event){
+  const file = event.target.files[0];
+  if(!file){ return; }
+  const progress = document.getElementById('importProgress');
+  progress.style.display = 'block';
+  progress.innerHTML = '⏳ Leyendo archivo Excel...';
+
+  try {
+    const data = await file.arrayBuffer();
+    const wb = XLSX.read(data, {type:'array'});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, {defval:''});
+
+    if(!rows.length){
+      progress.innerHTML = '⚠️ El archivo está vacío';
+      return;
+    }
+
+    // Normalize column names
+    const normalize = (str) => String(str).toLowerCase().trim()
+      .replace(/á/g,'a').replace(/é/g,'e').replace(/í/g,'i')
+      .replace(/ó/g,'o').replace(/ú/g,'u').replace(/\s+/g,'_');
+
+    const normalizedRows = rows.map(row => {
+      const newRow = {};
+      Object.keys(row).forEach(k => { newRow[normalize(k)] = row[k]; });
+      return newRow;
+    });
+
+    // Show preview
+    const firstRow = normalizedRows[0];
+    const cols = Object.keys(firstRow);
+    progress.innerHTML = `✅ Archivo leído: <b>${rows.length} productos</b> — Columnas: ${cols.join(', ')}<br>⏳ Procesando...`;
+
+    // Map columns flexibly
+    function getVal(row, keys, def=''){
+      for(const k of keys){
+        if(row[k]!==undefined && row[k]!=='') return row[k];
+      }
+      return def;
+    }
+
+    let created = 0, updated = 0, errors = 0;
+    const prods = getProducts();
+    const processedProds = [...prods];
+
+    for(const row of normalizedRows){
+      try {
+        const barcode = String(getVal(row, ['codigo','code','barcode','cod','codigo_barras'], '')).trim();
+        const name = String(getVal(row, ['nombre','name','producto','descripcion'], '')).trim();
+        const category = String(getVal(row, ['categoria','category','cat'], 'Varios')).trim();
+        const costPrice = parseFloat(getVal(row, ['precio_compra','costo','cost','precio_proveedor','pvp_proveedor'], 0)) || 0;
+        const price = parseFloat(getVal(row, ['precio_venta','precio','price','pvp','pvp_publico'], 0)) || 0;
+        const stock = parseInt(getVal(row, ['stock','cantidad','qty','existencia'], 0)) || 0;
+        const emoji = String(getVal(row, ['emoji','icono'], '📦')).trim() || '📦';
+        const lowStockAt = parseInt(getVal(row, ['alerta','min_stock','stock_minimo'], 5)) || 5;
+
+        if(!name){ errors++; continue; }
+
+        // Check if product exists by barcode or name
+        const existingIdx = processedProds.findIndex(p =>
+          (barcode && p.barcode && String(p.barcode).trim() === barcode) ||
+          p.name.toLowerCase() === name.toLowerCase()
+        );
+
+        if(existingIdx >= 0){
+          // UPDATE existing product
+          processedProds[existingIdx] = {
+            ...processedProds[existingIdx],
+            name, category, costPrice, price, stock, lowStockAt,
+            ...(barcode && {barcode}),
+            ...(emoji !== '📦' && {emoji})
+          };
+          // Update in Firebase
+          await fbSave('products', processedProds[existingIdx].id, processedProds[existingIdx]);
+          updated++;
+        } else {
+          // CREATE new product
+          const newProd = {
+            id: Date.now() + Math.random(),
+            name, emoji, category, costPrice, price,
+            barcode: barcode || '',
+            stock, lowStockAt
+          };
+          processedProds.push(newProd);
+          // Save to Firebase
+          await fbSave('products', newProd.id, newProd);
+          created++;
+        }
+      } catch(e){
+        errors++;
+        console.log('Error en fila:', row, e);
+      }
+    }
+
+    // Save all to localStorage
+    DB.set('products', processedProds);
+    renderAdminProducts();
+    renderCategories();
+    renderProducts();
+    checkStockAlerts();
+
+    progress.innerHTML = `
+      <div style="color:#2E7D32;font-size:14px;font-weight:800;margin-bottom:6px">✅ Importación completada</div>
+      <div style="display:flex;gap:16px;font-size:13px">
+        <span>🆕 Creados: <b>${created}</b></span>
+        <span>✏️ Actualizados: <b>${updated}</b></span>
+        ${errors>0?`<span style="color:var(--danger)">⚠️ Errores: <b>${errors}</b></span>`:''}
+      </div>
+    `;
+    showToast('✅ '+created+' creados, '+updated+' actualizados');
+
+    // Hide progress after 5 seconds
+    setTimeout(()=>{ progress.style.display='none'; }, 6000);
+
+  } catch(e){
+    progress.innerHTML = '❌ Error leyendo el archivo. Verifica que sea un Excel válido.';
+    console.log('Import error:', e);
+  }
+
+  // Reset file input
+  event.target.value = '';
+}
+
+// Download Excel template
+function downloadPlantilla(){
+  const data = [
+    {
+      codigo: '7750001',
+      nombre: 'Ejemplo Producto',
+      categoria: 'Snacks',
+      emoji: '🍪',
+      precio_compra: 0.45,
+      precio_venta: 0.60,
+      stock: 50,
+      alerta_stock: 10
+    },
+    {
+      codigo: '7740001',
+      nombre: 'Cola 300ml',
+      categoria: 'Bebidas',
+      emoji: '🥤',
+      precio_compra: 0.35,
+      precio_venta: 0.50,
+      stock: 30,
+      alerta_stock: 10
+    }
+  ];
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(data);
+
+  // Column widths
+  ws['!cols'] = [
+    {wch:14},{wch:22},{wch:14},{wch:8},
+    {wch:15},{wch:14},{wch:8},{wch:13}
+  ];
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Productos');
+
+  // Instructions sheet
+  const instrData = [
+    ['INSTRUCCIONES DE IMPORTACIÓN'],
+    [''],
+    ['Columnas requeridas:'],
+    ['codigo', 'Código de barras del producto (puede estar vacío)'],
+    ['nombre', 'Nombre del producto (OBLIGATORIO)'],
+    ['categoria', 'Categoría: Bebidas, Snacks, Abarrotes, Aseo, Papelería, etc.'],
+    ['emoji', 'Emoji del producto (opcional, por defecto 📦)'],
+    ['precio_compra', 'Precio que te cobra el proveedor'],
+    ['precio_venta', 'Precio al que vendes al público'],
+    ['stock', 'Cantidad actual en inventario'],
+    ['alerta_stock', 'Alertar cuando queden menos de X unidades'],
+    [''],
+    ['NOTAS:'],
+    ['- Si el código ya existe, el producto se ACTUALIZA'],
+    ['- Si el nombre ya existe, el producto se ACTUALIZA'],
+    ['- Si no existe, se CREA un producto nuevo'],
+    ['- Los nombres de columnas no distinguen mayúsculas/minúsculas'],
+  ];
+  const ws2 = XLSX.utils.aoa_to_sheet(instrData);
+  ws2['!cols'] = [{wch:20},{wch:55}];
+  XLSX.utils.book_append_sheet(wb, ws2, 'Instrucciones');
+
+  XLSX.writeFile(wb, 'Plantilla_Productos_TENTEN.xlsx');
+  showToast('✅ Plantilla descargada');
+}
+
+function renderInventario(){
+  const prods = getProducts();
+  const catFilter = (document.getElementById('invCatFilter')||{}).value || '';
+  const stockFilter = (document.getElementById('invStockFilter')||{}).value || 'all';
+  const cats = [...new Set(prods.map(p=>p.category))];
+  const sel = document.getElementById('invCatFilter');
+  if(sel){
+    const cv = sel.value;
+    sel.innerHTML = '<option value="">Todas las categorías</option>' + cats.map(c=>`<option value="${c}" ${c===cv?'selected':''}>${c}</option>`).join('');
+  }
+  const total=prods.length, agotados=prods.filter(p=>p.stock===0).length;
+  const bajos=prods.filter(p=>p.stock>0&&p.stock<=(p.lowStockAt||5)).length;
+  const ilimitados=prods.filter(p=>p.stock<0).length;
+  const bien=prods.filter(p=>p.stock<0||p.stock>(p.lowStockAt||5)).length;
+  const kpiEl = document.getElementById('invKpis');
+  if(kpiEl) kpiEl.innerHTML=`
+    <div class="kpi-card accent"><div class="kpi-label">📦 Total</div><div class="kpi-val">${total}</div><div class="kpi-sub">${ilimitados} ilimitados</div></div>
+    <div class="kpi-card"><div class="kpi-label">✅ Bien surtidos</div><div class="kpi-val" style="color:var(--g1)">${bien}</div><div class="kpi-sub">sobre el mínimo</div></div>
+    <div class="kpi-card"><div class="kpi-label">⚠️ Stock bajo</div><div class="kpi-val" style="color:var(--warn)">${bajos}</div><div class="kpi-sub">pedir pronto</div></div>
+    <div class="kpi-card"><div class="kpi-label">🔴 Agotados</div><div class="kpi-val" style="color:var(--danger)">${agotados}</div><div class="kpi-sub">sin stock</div></div>
+  `;
+  let filtered = prods;
+  if(catFilter) filtered = filtered.filter(p=>p.category===catFilter);
+  if(stockFilter==='low') filtered = filtered.filter(p=>p.stock>0&&p.stock<=(p.lowStockAt||5));
+  else if(stockFilter==='out') filtered = filtered.filter(p=>p.stock===0);
+  else if(stockFilter==='ok') filtered = filtered.filter(p=>p.stock<0||p.stock>(p.lowStockAt||5));
+  const byCat={};
+  filtered.forEach(p=>{ if(!byCat[p.category]) byCat[p.category]=[]; byCat[p.category].push(p); });
+  const tbl = document.getElementById('invTable');
+  if(!tbl) return;
+  if(!filtered.length){ tbl.innerHTML='<div class="empty"><div class="ei">📦</div><p>Sin productos</p></div>'; return; }
+  tbl.innerHTML = Object.entries(byCat).map(([cat,items])=>`
+    <div style="margin-bottom:20px">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:8px;padding:8px 12px;background:var(--border);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+        <span>${cat} — ${items.length} productos</span>
+        <button data-cat="${cat}" onclick="addProductInCategory(this.dataset.cat)" style="background:var(--g1);color:white;border:none;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer">+ Agregar</button>
+      </div>
+      <div style="background:white;border-radius:14px;overflow:hidden;box-shadow:var(--shadow)">
+        <div style="display:grid;grid-template-columns:1fr 60px 70px 55px 50px;font-size:10px;font-weight:800;text-transform:uppercase;color:var(--muted);padding:8px 14px;border-bottom:2px solid var(--border)">
+          <span>Producto</span><span style="text-align:center">PVP</span><span style="text-align:center">Ganancia</span><span style="text-align:center">Stock</span><span style="text-align:center">Estado</span>
+        </div>
+        ${items.map(p=>{
+          const isOut=p.stock===0, isLow=p.stock>0&&p.stock<=(p.lowStockAt||5), isUnlim=p.stock<0;
+          const icon=isOut?'🔴':isLow?'⚠️':isUnlim?'♾️':'✅';
+          const color=isOut?'var(--danger)':isLow?'var(--warn)':isUnlim?'var(--info)':'var(--g1)';
+          const gain=p.costPrice>0?p.price-p.costPrice:null;
+          const gainPct=p.costPrice>0?((gain/p.costPrice)*100).toFixed(0):null;
+          return `<div style="display:grid;grid-template-columns:1fr 60px 70px 55px 50px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);background:${isOut?'#FFF5F5':isLow?'#FFFBF0':'white'}">
+            <div>
+              <span style="font-size:15px">${p.emoji}</span>
+              <span style="font-size:13px;font-weight:700;margin-left:5px">${p.name}</span>
+              ${p.barcode?`<div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace">🔖 ${p.barcode}</div>`:''}
+              ${p.costPrice>0?`<div style="font-size:10px;color:var(--muted)">Costo: $${p.costPrice.toFixed(2)}</div>`:''}
+            </div>
+            <span style="font-size:13px;font-weight:800;font-family:'DM Mono',monospace;color:var(--g2);text-align:center">$${p.price.toFixed(2)}</span>
+            <span style="font-size:11px;font-weight:800;font-family:'DM Mono',monospace;color:var(--g1);text-align:center">${gain!==null?'$'+gain.toFixed(2)+' '+gainPct+'%':'—'}</span>
+            <span style="font-size:15px;font-weight:800;color:${color};text-align:center">${p.stock<0?'∞':p.stock}</span>
+            <span style="font-size:15px;text-align:center">${icon}</span>
+          </div>`;
+        }).join('')}
+        <div data-cat="${cat}" onclick="addProductInCategory(this.dataset.cat)"
+          style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;background:#FAFAFA;border-top:2px dashed var(--border)"
+          onmouseover="this.style.background='#FFF3CD'" onmouseout="this.style.background='#FAFAFA'">
+          <div style="width:26px;height:26px;background:var(--g1);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:18px">+</div>
+          <span style="font-size:13px;font-weight:700;color:var(--g1)">Agregar producto en <b>${cat}</b></span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function togglePass(id, el){
+  const inp = document.getElementById(id);
+  if(!inp) return;
+  if(inp.type==='password'){ inp.type='text'; el.textContent='🙈'; }
+  else { inp.type='password'; el.textContent='👁️'; }
+}
+
+function addProductInCategory(cat){
+  const prods = getProducts();
+  const cats = [...new Set(prods.map(x=>x.category))];
+  openModalContent(`
+    <h3>➕ Nuevo Producto en <span style="color:var(--g1)">${cat}</span></h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-group"><label>Emoji</label><input id="pEmoji" value="📦" maxlength="4"></div>
+      <div class="form-group"><label>Categoría</label><input id="pCat" list="catListInv" value="${cat}"><datalist id="catListInv">${cats.map(c=>'<option value="'+c+'">').join('')}</datalist></div>
+    </div>
+    <div class="form-group"><label>Nombre del producto</label><input id="pName" placeholder="Ej: Galletas" autofocus></div>
+    <div style="background:#F0F9FF;border-radius:12px;padding:12px;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:800;color:#1565C0;margin-bottom:10px">💰 Precios</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group" style="margin:0"><label>🏭 PVP Proveedor ($)</label><input id="pCost" type="number" step="0.01" min="0" value="0" oninput="calcGanancia2()" placeholder="0.00"></div>
+        <div class="form-group" style="margin:0"><label>🏷️ PVP Público ($)</label><input id="pPrice" type="number" step="0.05" min="0" value="0" oninput="calcGanancia2()" placeholder="0.00"></div>
+      </div>
+      <div style="margin-top:10px;padding:10px;background:white;border-radius:10px;display:flex;justify-content:space-between;font-size:13px">
+        <span style="color:#888">Ganancia por unidad:</span>
+        <span id="gananciaVal2" style="font-weight:800;font-family:'DM Mono',monospace;color:var(--g1)">$0.00 (0%)</span>
+      </div>
+    </div>
+    <div class="form-group"><label>Código de barras</label><input id="pBarcode" placeholder="Escanea o escribe"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-group"><label>Stock inicial</label><input id="pStock" type="number" value="10"></div>
+      <div class="form-group"><label>⚠️ Alertar cuando queden</label><input id="pLow" type="number" value="5"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="saveProductAndRefreshInv()">💾 Guardar</button>
+    </div>
+  `);
+  setTimeout(()=>calcGanancia2(), 100);
+}
+
+function calcGanancia2(){
+  const cost=parseFloat(document.getElementById('pCost')?.value)||0;
+  const sale=parseFloat(document.getElementById('pPrice')?.value)||0;
+  const el=document.getElementById('gananciaVal2');
+  if(!el) return;
+  if(cost>0&&sale>0){
+    const gain=sale-cost;
+    const pct=(gain/cost*100).toFixed(1);
+    el.textContent='$'+gain.toFixed(2)+' ('+pct+'%)';
+    el.style.color=gain>0?'var(--g1)':'var(--danger)';
+  } else {
+    el.textContent='$0.00 (0%)';
+    el.style.color='#888';
+  }
+}
+
+function saveProductAndRefreshInv(){
+  const name=document.getElementById('pName').value.trim();
+  const price=parseFloat(document.getElementById('pPrice').value)||0;
+  const costPrice=parseFloat(document.getElementById('pCost')?.value)||0;
+  const emoji=document.getElementById('pEmoji').value.trim()||'📦';
+  const category=document.getElementById('pCat').value.trim()||'Varios';
+  const barcode=document.getElementById('pBarcode').value.trim();
+  const stock=parseInt(document.getElementById('pStock').value)||0;
+  const lowStockAt=parseInt(document.getElementById('pLow').value)||5;
+  if(!name){showToast('⚠️ Ingresa el nombre');return;}
+  const prods=getProducts();
+  const newProd={id:Date.now(),name,price,costPrice,emoji,category,barcode,stock,lowStockAt};
+  prods.push(newProd);
+  DB.set('products',prods);
+  fbSave('products', newProd.id, newProd);
+  closeModal();
+  renderInventario();
+  renderCategories();
+  renderProducts();
+  checkStockAlerts();
+  showToast('✅ '+name+' agregado en '+category);
+}
+
+function updateClientePuntos(){
+  const clienteId = parseInt(document.getElementById('clienteVentaSelect')?.value)||0;
+  const preview = document.getElementById('clientePuntosPreview');
+  if(!clienteId||!preview){ if(preview) preview.style.display='none'; return; }
+  const config = getConfigPuntos();
+  const total = getCartTotal();
+  const puntos = (total / (config.dolarPorPunto||2)).toFixed(1);
+  preview.style.display='block';
+  preview.textContent='⭐ Ganará '+puntos+' puntos con esta compra';
+}
+
+function populateClientesSelect(){
+  const sel = document.getElementById('clienteVentaSelect');
+  if(!sel) return;
+  const clientes = getClientes().sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  sel.innerHTML='<option value="">Sin cliente</option>'+clientes.map(c=>`<option value="${c.id}">${c.nombre}${c.puntos>0?' ('+c.puntos.toFixed(1)+' pts)':''}</option>`).join('');
+}
+
+function cobrarConFactura(){
+  if(!Object.keys(cart).length){showToast('⚠️ Agrega productos primero');return;}
+  const items=Object.values(cart);
+  const sub=items.reduce((s,i)=>s+(i.price*i.qty),0);
+  const disc=getDiscount(sub);
+  const total=sub-disc;
+  openModalContent(`
+    <h3>🧾 Datos para Factura</h3>
+    <div style="background:#E3F2FD;border-radius:12px;padding:12px;margin-bottom:16px;text-align:center">
+      <div style="font-size:12px;color:#1565C0;font-weight:700;margin-bottom:4px">TOTAL A FACTURAR</div>
+      <div style="font-size:28px;font-weight:800;color:#1565C0;font-family:'DM Mono',monospace">$${total.toFixed(2)}</div>
+    </div>
+    <div class="form-group">
+      <label>Nombre completo</label>
+      <input id="factNombre" placeholder="Ej: Juan Carlos Pérez" autofocus>
+    </div>
+    <div class="form-group">
+      <label>Cédula / RUC</label>
+      <input id="factCedula" placeholder="Ej: 1712345678" maxlength="13" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="confirmarConFactura()">✅ Cobrar con Factura</button>
+    </div>
+  `);
+}
+
+function confirmarConFactura(){
+  const nombre = document.getElementById('factNombre').value.trim();
+  const cedula = document.getElementById('factCedula').value.trim();
+  if(!nombre){showToast('⚠️ Ingresa el nombre del cliente');return;}
+  if(!cedula||cedula.length<10){showToast('⚠️ Ingresa una cédula válida (10 dígitos)');return;}
+  closeModal();
+  // Store client data for receipt
+  pendingFactura = {nombre, cedula};
+  cobrar();
+}
+
+let pendingFactura = null;
+
+function anularVenta(id){
+  openModalContent(`
+    <h3>🚫 Anular Venta</h3>
+    <div style="background:#FFEBEE;border-radius:12px;padding:14px;margin-bottom:16px;text-align:center">
+      <div style="font-size:13px;color:var(--danger);font-weight:700">⚠️ La venta quedará marcada como anulada</div>
+      <div style="font-size:12px;color:#888;margin-top:4px">El stock se restaurará automáticamente</div>
+    </div>
+    <div class="form-group">
+      <label>Motivo de anulación</label>
+      <input id="motivoAnulacion" placeholder="Ej: Error en producto, devolución..." autofocus>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button style="flex:1;padding:13px;border-radius:12px;background:var(--danger);color:white;border:none;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif" onclick="confirmarAnulacion(${id})">🚫 Anular</button>
+    </div>
+  `);
+}
+
+async function confirmarAnulacion(id){
+  const motivo = document.getElementById('motivoAnulacion').value.trim() || 'Sin motivo';
+  const sales = getSales();
+  const sale = sales.find(s=>s.id===id);
+  if(!sale){ showToast('⚠️ Venta no encontrada'); closeModal(); return; }
+  sale.anulada = true;
+  sale.anuladaPor = currentUser.name;
+  sale.anuladaFecha = new Date().toLocaleDateString('es-EC');
+  sale.anuladaMotivo = motivo;
+  // Restore stock
+  const prods = getProducts();
+  sale.items.forEach(si=>{
+    const p = prods.find(x=>x.id===si.id);
+    if(p && p.stock >= 0) p.stock += si.qty;
+  });
+  DB.set('sales', sales);
+  DB.set('products', prods);
+  await fbSave('sales', sale.id, sale);
+  prods.forEach(p=>fbSave('products', p.id, p));
+  closeModal();
+  renderHistorial();
+  renderProducts();
+  checkStockAlerts();
+  showToast('🚫 Venta anulada — stock restaurado');
+}
+
+function setHoyAnuladas(){
+  const today = new Date().toISOString().split('T')[0];
+  const i = document.getElementById('anuladasFechaInicio');
+  const f = document.getElementById('anuladasFechaFin');
+  if(i) i.value = today;
+  if(f) f.value = today;
+  renderReportes();
+}
+
+function renderReportes(){
+  const today = new Date().toISOString().split('T')[0];
+  const allSales = getSales();
+
+  // --- ANULADAS ---
+  const anuladasInicio = document.getElementById('anuladasFechaInicio')?.value || today;
+  const anuladasFin = document.getElementById('anuladasFechaFin')?.value || today;
+  const anuladas = allSales.filter(s=>s.anulada && s.date>=anuladasInicio && s.date<=anuladasFin);
+  const totalAnulado = anuladas.reduce((s,v)=>s+v.total,0);
+  const labelAnuladas = anuladasInicio===anuladasFin ? anuladasInicio : anuladasInicio+' al '+anuladasFin;
+
+  document.getElementById('anuladasResumen').innerHTML = `
+    <div style="background:#FFEBEE;border-radius:12px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center">
+      <div><div style="font-size:11px;color:#999">Ventas anuladas ${labelAnuladas}</div><div style="font-size:20px;font-weight:800;color:var(--danger);font-family:'DM Mono',monospace">${anuladas.length} ventas</div></div>
+      <div style="text-align:right"><div style="font-size:11px;color:#999">Total anulado</div><div style="font-size:20px;font-weight:800;color:var(--danger);font-family:'DM Mono',monospace">$${totalAnulado.toFixed(2)}</div></div>
+    </div>`;
+
+  const anuladasCont = document.getElementById('anuladasList');
+  if(!anuladas.length){
+    anuladasCont.innerHTML='<div class="empty"><div class="ei">✅</div><p>Sin ventas anuladas en esta fecha</p></div>';
+  } else {
+    anuladasCont.innerHTML = anuladas.map(s=>`
+      <div class="sale-card" style="border-left-color:var(--danger);background:#FFFAFA">
+        <div class="sc-top">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="sc-hora">🕐 ${s.time}</span>
+            <span class="sc-user">${s.user}</span>
+          </div>
+          <span class="sc-total" style="text-decoration:line-through;color:#999">$${s.total.toFixed(2)}</span>
+        </div>
+        <div class="sc-items">${s.items.map(i=>`${i.qty}× ${i.name}`).join(' · ')}</div>
+        <div style="font-size:11px;color:#999;margin-top:6px;padding-top:6px;border-top:1px dashed #eee">
+          🚫 Anulada por: <b>${s.anuladaPor||'Admin'}</b> — Motivo: ${s.anuladaMotivo||'Sin motivo'}
+        </div>
+      </div>`).join('');
+  }
+
+  // --- HISTORIAL VENTAS ---
+  const fechaInicio = document.getElementById('reporteFechaInicio').value || today;
+  const fechaFin = document.getElementById('reporteFechaFin').value || today;
+
+  const ventas = allSales.filter(s=>{
+    if(s.anulada) return false;
+    return s.date >= fechaInicio && s.date <= fechaFin;
+  });
+
+  const totalVentas = ventas.reduce((s,v)=>s+v.total,0);
+  const nVentas = ventas.length;
+
+  document.getElementById('reporteResumen').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+      <div class="kpi-card accent"><div class="kpi-label">💰 Total</div><div class="kpi-val">$${totalVentas.toFixed(2)}</div></div>
+      <div class="kpi-card"><div class="kpi-label">🛒 Ventas</div><div class="kpi-val">${nVentas}</div></div>
+      <div class="kpi-card"><div class="kpi-label">📊 Promedio</div><div class="kpi-val">$${nVentas?( totalVentas/nVentas).toFixed(2):'0.00'}</div></div>
+    </div>`;
+
+  const reporteCont = document.getElementById('reporteList');
+  if(!ventas.length){
+    reporteCont.innerHTML='<div class="empty"><div class="ei">📋</div><p>Sin ventas en este período</p></div>';
+  } else {
+    const payL={cash:'💵 Efectivo',transfer:'📱 Transfer.',card:'💳 Tarjeta',credit:'📝 Fiado'};
+    reporteCont.innerHTML = ventas.map(s=>`
+      <div class="sale-card">
+        <div class="sc-top">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">${s.date} ${s.time}</span>
+            <span class="sc-user">${s.user}</span>
+            ${s.factNombre?`<span style="font-size:10px;background:#E3F2FD;color:#1565C0;padding:2px 8px;border-radius:20px;font-weight:700">🧾 ${s.factNombre}</span>`:''}
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="sc-total">$${s.total.toFixed(2)}</span>
+            <button onclick='showReceipt(${JSON.stringify(s)})' style="background:#FFF3CD;border:none;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer;color:var(--g1)">🖨️</button>
+          </div>
+        </div>
+        <div class="sc-items">${s.items.map(i=>`${i.qty}× ${i.name}`).join(' · ')}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">${payL[s.paymentMethod]||s.paymentMethod||''}</div>
+      </div>`).join('');
+  }
+}
+
+function exportHistorialExcel(){
+  const today = new Date().toISOString().split('T')[0];
+  const fechaInicio = document.getElementById('reporteFechaInicio').value || today;
+  const fechaFin = document.getElementById('reporteFechaFin').value || today;
+  const allSales = getSales();
+  const ventas = allSales.filter(s=> !s.anulada && s.date>=fechaInicio && s.date<=fechaFin);
+
+  if(!ventas.length){ showToast('⚠️ Sin ventas en ese período'); return; }
+
+  const rows = [];
+  ventas.forEach(s=>{
+    s.items.forEach(i=>{
+      rows.push({
+        'Fecha': s.date,
+        'Hora': s.time,
+        'Comprobante #': String(s.id).slice(-6),
+        'Cajero': s.user,
+        'Producto': i.name,
+        'Cantidad': i.qty,
+        'Precio Unit ($)': i.price.toFixed(2),
+        'Subtotal ($)': i.subtotal.toFixed(2),
+        'Descuento ($)': s.discount>0?s.discount.toFixed(2):'',
+        'Total Venta ($)': s.total.toFixed(2),
+        'Método Pago': {cash:'Efectivo',transfer:'Transferencia',card:'Tarjeta',credit:'Fiado'}[s.paymentMethod]||s.paymentMethod,
+        'Cliente': s.factNombre||s.fiadoClient||'',
+        'Cédula/RUC': s.factCedula||'',
+      });
+    });
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{wch:12},{wch:8},{wch:14},{wch:12},{wch:20},{wch:8},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:20},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Ventas');
+
+  // Summary sheet
+  const totalVentas = ventas.reduce((s,v)=>s+v.total,0);
+  const summary = [
+    ['TENTEN MICROMERCADO — Reporte de Ventas'],
+    ['Período:', fechaInicio+' al '+fechaFin],
+    ['Total ventas:', ventas.length],
+    ['Total recaudado ($):', totalVentas.toFixed(2)],
+    ['Promedio por venta ($):', (totalVentas/ventas.length).toFixed(2)],
+    ['Fecha exportación:', new Date().toLocaleDateString('es-EC')],
+  ];
+  const ws2 = XLSX.utils.aoa_to_sheet(summary);
+  ws2['!cols'] = [{wch:25},{wch:20}];
+  XLSX.utils.book_append_sheet(wb, ws2, 'Resumen');
+
+  XLSX.writeFile(wb, 'TENTEN_Ventas_'+fechaInicio+'_'+fechaFin+'.xlsx');
+  showToast('✅ Excel descargado');
+}
+
+function exportFiadosExcel(){
+  const estadoFilter = document.getElementById('fiadoEstadoFilter')?.value || 'todos';
+  const fechaFilter = document.getElementById('fiadoFechaFilter')?.value || '';
+  let fiados = getFiados();
+
+  if(estadoFilter==='pendiente') fiados = fiados.filter(f=>!f.paid);
+  else if(estadoFilter==='pagado') fiados = fiados.filter(f=>f.paid);
+  if(fechaFilter) fiados = fiados.filter(f=>f.entries.some(e=>e.date===fechaFilter));
+
+  if(!fiados.length){ showToast('⚠️ Sin fiados para exportar'); return; }
+
+  const rows = [];
+  fiados.forEach(f=>{
+    f.entries.forEach(e=>{
+      rows.push({
+        'Cliente': f.client,
+        'Teléfono': f.telefono||'',
+        'Cédula': f.cedula||'',
+        'Fecha': e.date,
+        'Monto ($)': e.amount.toFixed(2),
+        'Nota': e.note||'',
+        'Estado': f.paid?'✅ Cobrado':'💳 Pendiente',
+        'Total Deuda ($)': f.total.toFixed(2),
+        'Fecha Cobro': f.paidDate||'',
+      });
+    });
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols']=[{wch:20},{wch:14},{wch:14},{wch:12},{wch:12},{wch:20},{wch:14},{wch:14},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Fiados');
+
+  const totalPendiente = getFiados().filter(f=>!f.paid).reduce((s,f)=>s+f.total,0);
+  const summary=[
+    ['TENTEN MICROMERCADO — Reporte de Fiados'],
+    ['Fecha exportación:', new Date().toLocaleDateString('es-EC')],
+    ['Filtro estado:', estadoFilter],
+    ['Filtro fecha:', fechaFilter||'Todas'],
+    ['Total pendiente ($):', totalPendiente.toFixed(2)],
+    ['Clientes pendientes:', getFiados().filter(f=>!f.paid).length],
+  ];
+  const ws2=XLSX.utils.aoa_to_sheet(summary);
+  ws2['!cols']=[{wch:25},{wch:20}];
+  XLSX.utils.book_append_sheet(wb, ws2, 'Resumen');
+
+  const fecha = new Date().toISOString().split('T')[0];
+  XLSX.writeFile(wb, 'TENTEN_Fiados_'+fecha+'.xlsx');
+  showToast('✅ Excel de fiados descargado');
+}
+
+// ============================================================
+// CARTERA DE CLIENTES
+// ============================================================
+function renderClientes(){
+  const clientes = getClientes();
+  const config = getConfigPuntos();
+  const buscar = (document.getElementById('clienteBuscar')?.value||'').toLowerCase().trim();
+  const orden = document.getElementById('clienteOrdenFilter')?.value || 'puntos';
+
+  // KPIs
+  const totalClientes = clientes.length;
+  const listosCanjear = clientes.filter(c=>c.puntos>=(config.metaPuntos||100)).length;
+  const totalPuntos = clientes.reduce((s,c)=>s+c.puntos,0);
+  const mejorCliente = clientes.sort((a,b)=>b.totalCompras-a.totalCompras)[0];
+
+  document.getElementById('clientesKpis').innerHTML=`
+    <div class="kpi-card accent"><div class="kpi-label">👥 Total clientes</div><div class="kpi-val">${totalClientes}</div><div class="kpi-sub">registrados</div></div>
+    <div class="kpi-card"><div class="kpi-label">🎁 Listos canjear</div><div class="kpi-val" style="color:var(--acc)">${listosCanjear}</div><div class="kpi-sub">meta: ${config.metaPuntos} pts</div></div>
+    <div class="kpi-card"><div class="kpi-label">⭐ Total puntos</div><div class="kpi-val" style="color:#F59E0B">${totalPuntos.toFixed(1)}</div><div class="kpi-sub">acumulados</div></div>
+    <div class="kpi-card"><div class="kpi-label">🏆 Mejor cliente</div><div class="kpi-val" style="font-size:14px;color:var(--g1)">${mejorCliente?mejorCliente.nombre.split(' ')[0]:'—'}</div><div class="kpi-sub">${mejorCliente?'$'+mejorCliente.totalCompras.toFixed(2):''}</div></div>
+  `;
+
+  let filtered = [...clientes];
+
+  // Search
+  if(buscar){
+    filtered = filtered.filter(c=>
+      c.nombre.toLowerCase().includes(buscar)||
+      (c.cedula||'').includes(buscar)||
+      (c.telefono||'').includes(buscar)
+    );
+  }
+
+  // Order
+  if(orden==='puntos') filtered.sort((a,b)=>b.puntos-a.puntos);
+  else if(orden==='compras') filtered.sort((a,b)=>b.totalCompras-a.totalCompras);
+  else if(orden==='nombre') filtered.sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  else if(orden==='canje') filtered = filtered.filter(c=>c.puntos>=(config.metaPuntos||100)).sort((a,b)=>b.puntos-a.puntos);
+
+  const cont = document.getElementById('clientesList');
+  if(!filtered.length){
+    cont.innerHTML='<div class="empty"><div class="ei">👥</div><p>Sin clientes registrados</p></div>';
+    return;
+  }
+
+  cont.innerHTML = filtered.map(c=>{
+    const meta = config.metaPuntos||100;
+    const pct = Math.min((c.puntos/meta)*100, 100).toFixed(0);
+    const listo = c.puntos >= meta;
+    return `<div style="background:white;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:var(--shadow);border-left:4px solid ${listo?'var(--acc)':'var(--border)'}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-size:15px;font-weight:800">${listo?'🎁 ':''} ${c.nombre}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">
+            ${c.telefono?'📱 '+c.telefono:''}
+            ${c.cedula?' · 🪪 '+c.cedula:''}
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">
+            🛒 ${c.numCompras||0} compras · 💰 $${(c.totalCompras||0).toFixed(2)} total
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:20px;font-weight:800;color:${listo?'var(--acc)':'var(--g1)'};font-family:'DM Mono',monospace">${c.puntos.toFixed(1)}</div>
+          <div style="font-size:10px;color:var(--muted)">puntos</div>
+        </div>
+      </div>
+      <!-- Progress bar -->
+      <div style="margin-top:10px">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:4px">
+          <span>${listo?'🎁 ¡Listo para canjear!':'Progreso hacia premio'}</span>
+          <span>${c.puntos.toFixed(1)} / ${meta} pts</span>
+        </div>
+        <div style="background:var(--bg);border-radius:6px;height:10px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${listo?'linear-gradient(90deg,var(--acc),#F59E0B)':'linear-gradient(90deg,var(--g1),var(--g2))'};border-radius:6px;transition:width .5s"></div>
+        </div>
+      </div>
+      <!-- Actions -->
+      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+        <button onclick="openClienteModal(${c.id})" style="background:#E3F2FD;color:#1565C0;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">✏️ Editar</button>
+        <button onclick="ajustarPuntos(${c.id})" style="background:#FFF3E0;color:var(--warn);border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">⭐ Puntos</button>
+        ${listo?`<button onclick="canjearPremio(${c.id})" style="background:var(--acc);color:#333;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:800;cursor:pointer">🎁 Canjear</button>`:''}
+        <button onclick="verHistorialCliente(${c.id})" style="background:#F3E5F5;color:#6A1B9A;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">📋 Historial</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openClienteModal(id){
+  const c = id ? getClientes().find(x=>x.id===id) : {id:null,nombre:'',telefono:'',cedula:'',email:'',puntos:0,totalCompras:0,numCompras:0,fechaRegistro:new Date().toISOString().split('T')[0]};
+  openModalContent(`
+    <h3>${id?'✏️ Editar Cliente':'👤 Nuevo Cliente'}</h3>
+    <div class="form-group"><label>Nombre completo</label><input id="cNombre" value="${c.nombre}" placeholder="Ej: María García" autofocus></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-group"><label>📱 Teléfono</label><input id="cTelefono" value="${c.telefono||''}" placeholder="0991234567" maxlength="10"></div>
+      <div class="form-group"><label>🪪 Cédula</label><input id="cCedula" value="${c.cedula||''}" placeholder="1712345678" maxlength="10"></div>
+    </div>
+    <div class="form-group"><label>📧 Correo (opcional)</label><input id="cEmail" value="${c.email||''}" placeholder="correo@gmail.com" type="email"></div>
+    ${id?`<div style="background:#FFF3E0;border-radius:10px;padding:10px;font-size:13px;margin-bottom:8px">⭐ Puntos actuales: <b>${c.puntos.toFixed(1)}</b> | 🛒 Compras: <b>${c.numCompras}</b> | 💰 Total: <b>$${c.totalCompras.toFixed(2)}</b></div>`:''}
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="saveCliente(${id||'null'})">💾 Guardar</button>
+    </div>
+  `);
+}
+
+function saveCliente(id){
+  const nombre = document.getElementById('cNombre').value.trim();
+  const telefono = document.getElementById('cTelefono').value.trim();
+  const cedula = document.getElementById('cCedula').value.trim();
+  const email = document.getElementById('cEmail').value.trim();
+  if(!nombre){showToast('⚠️ Ingresa el nombre');return;}
+  const clientes = getClientes();
+  if(id){
+    const c = clientes.find(x=>x.id===id);
+    Object.assign(c,{nombre,telefono,cedula,email});
+  } else {
+    clientes.push({id:Date.now(),nombre,telefono,cedula,email,puntos:0,totalCompras:0,numCompras:0,fechaRegistro:new Date().toISOString().split('T')[0],historial:[]});
+  }
+  DB.set('clientes',clientes);
+  fbSave('clientes_pos', id||clientes[clientes.length-1].id, id?clientes.find(x=>x.id===id):clientes[clientes.length-1]);
+  closeModal();renderClientes();showToast('✅ Cliente guardado');
+}
+
+function ajustarPuntos(id){
+  const c = getClientes().find(x=>x.id===id);
+  if(!c) return;
+  openModalContent(`
+    <h3>⭐ Ajustar Puntos — ${c.nombre}</h3>
+    <div style="text-align:center;background:#FFF3E0;border-radius:12px;padding:14px;margin-bottom:16px">
+      <div style="font-size:12px;color:var(--warn);font-weight:700">PUNTOS ACTUALES</div>
+      <div style="font-size:36px;font-weight:800;color:var(--acc);font-family:'DM Mono',monospace">${c.puntos.toFixed(1)}</div>
+    </div>
+    <div class="form-group"><label>Puntos a agregar o restar (ej: 5 o -3)</label><input id="ajustePuntos" type="number" step="0.5" placeholder="0" autofocus></div>
+    <div class="form-group"><label>Motivo</label><input id="ajusteMotivo" placeholder="Ej: Promoción especial"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="confirmarAjustePuntos(${id})">✅ Aplicar</button>
+    </div>
+  `);
+}
+
+function confirmarAjustePuntos(id){
+  const ajuste = parseFloat(document.getElementById('ajustePuntos').value)||0;
+  if(!ajuste){showToast('⚠️ Ingresa los puntos');return;}
+  const clientes = getClientes();
+  const c = clientes.find(x=>x.id===id);
+  c.puntos = Math.max(0, c.puntos + ajuste);
+  if(!c.historial) c.historial=[];
+  c.historial.push({fecha:new Date().toISOString().split('T')[0],tipo:'ajuste',puntos:ajuste,motivo:document.getElementById('ajusteMotivo').value||'Ajuste manual'});
+  DB.set('clientes',clientes);
+  fbSave('clientes_pos', c.id, c);
+  closeModal();renderClientes();
+  showToast((ajuste>0?'✅ +':'⚠️ ')+ajuste+' puntos aplicados a '+c.nombre);
+  // Check if reached goal
+  const config = getConfigPuntos();
+  if(c.puntos >= (config.metaPuntos||100)){
+    setTimeout(()=>showToast('🎁 ¡'+c.nombre+' llegó a la meta! Puede canjear su premio'),1000);
+  }
+}
+
+function canjearPremio(id){
+  const c = getClientes().find(x=>x.id===id);
+  const config = getConfigPuntos();
+  if(!c) return;
+  openModalContent(`
+    <h3>🎁 Canjear Premio</h3>
+    <div style="text-align:center;background:linear-gradient(135deg,#F59E0B,#F39C12);border-radius:16px;padding:20px;margin-bottom:16px;color:white">
+      <div style="font-size:40px;margin-bottom:8px">🎁</div>
+      <div style="font-size:18px;font-weight:800">${c.nombre}</div>
+      <div style="font-size:14px;opacity:.9;margin-top:4px">${c.puntos.toFixed(1)} puntos acumulados</div>
+      <div style="font-size:16px;font-weight:800;margin-top:8px;background:rgba(255,255,255,.2);border-radius:10px;padding:8px">Premio: ${config.premio||'Premio sorpresa'}</div>
+    </div>
+    <div style="background:#FFF3E0;border-radius:10px;padding:10px;font-size:13px;margin-bottom:14px">
+      ⚠️ Se descontarán <b>${config.metaPuntos} puntos</b> de la cuenta del cliente.
+      ${c.puntos>config.metaPuntos?`<br>Le quedarán: <b>${(c.puntos-config.metaPuntos).toFixed(1)} puntos</b>`:''}
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button style="flex:1;padding:13px;border-radius:12px;background:var(--acc);color:#333;border:none;font-size:14px;font-weight:800;cursor:pointer;font-family:'DM Sans',sans-serif" onclick="confirmarCanje(${id})">🎁 Confirmar Canje</button>
+    </div>
+  `);
+}
+
+function confirmarCanje(id){
+  const clientes = getClientes();
+  const c = clientes.find(x=>x.id===id);
+  const config = getConfigPuntos();
+  const meta = config.metaPuntos||100;
+  c.puntos = Math.max(0, c.puntos - meta);
+  if(!c.historial) c.historial=[];
+  c.historial.push({fecha:new Date().toISOString().split('T')[0],tipo:'canje',puntos:-meta,motivo:'Canje de premio: '+config.premio});
+  DB.set('clientes',clientes);
+  fbSave('clientes_pos', c.id, c);
+  closeModal();renderClientes();
+  showToast('🎁 ¡Premio canjeado para '+c.nombre+'!');
+}
+
+function verHistorialCliente(id){
+  const c = getClientes().find(x=>x.id===id);
+  if(!c) return;
+  const hist = (c.historial||[]).slice(-10).reverse();
+  openModalContent(`
+    <h3>📋 Historial — ${c.nombre}</h3>
+    <div style="background:#F8F9FA;border-radius:12px;padding:12px;margin-bottom:14px;font-size:13px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span>⭐ Puntos actuales:</span><b>${c.puntos.toFixed(1)}</b>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span>🛒 Total compras:</span><b>${c.numCompras}</b>
+      </div>
+      <div style="display:flex;justify-content:space-between">
+        <span>💰 Total gastado:</span><b>$${c.totalCompras.toFixed(2)}</b>
+      </div>
+    </div>
+    ${hist.length?hist.map(h=>`
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px">
+        <div>
+          <div style="font-weight:700">${h.tipo==='compra'?'🛒':h.tipo==='canje'?'🎁':'⭐'} ${h.motivo||h.tipo}</div>
+          <div style="color:var(--muted)">${h.fecha}</div>
+        </div>
+        <span style="font-weight:800;color:${h.puntos>0?'var(--g1)':'var(--danger)'};font-family:'DM Mono',monospace">${h.puntos>0?'+':''}${h.puntos} pts</span>
+      </div>`).join(''):'<div style="color:var(--muted);text-align:center;padding:20px">Sin historial aún</div>'}
+    <div class="modal-actions"><button class="btn-confirm" onclick="closeModal()">Cerrar</button></div>
+  `);
+}
+
+function openConfigPuntos(){
+  const config = getConfigPuntos();
+  openModalContent(`
+    <h3>⚙️ Configurar Sistema de Puntos</h3>
+    <div style="background:#E3F2FD;border-radius:12px;padding:12px;margin-bottom:14px;font-size:13px;color:#1565C0">
+      💡 Con la configuración actual: por cada <b>$2</b> de compra el cliente gana <b>1 punto</b>
+    </div>
+    <div class="form-group">
+      <label>💵 Dólares necesarios para ganar 1 punto</label>
+      <input id="cfgDolar" type="number" step="0.5" min="0.5" value="${config.dolarPorPunto||2}" placeholder="2">
+    </div>
+    <div class="form-group">
+      <label>🎯 Meta de puntos para ganar el premio</label>
+      <input id="cfgMeta" type="number" min="1" value="${config.metaPuntos||100}" placeholder="100">
+    </div>
+    <div class="form-group">
+      <label>🎁 Descripción del premio</label>
+      <input id="cfgPremio" value="${config.premio||'Premio sorpresa'}" placeholder="Ej: Producto gratis, descuento 10%">
+    </div>
+    <div style="background:#E8F5E9;border-radius:10px;padding:10px;font-size:12px;color:#2E7D32;margin-bottom:14px">
+      ✅ Ejemplo: Con meta de ${config.metaPuntos} puntos, el cliente necesita gastar <b>$${((config.metaPuntos||100)*(config.dolarPorPunto||2)).toFixed(0)}</b> para ganar el premio
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="saveConfigPuntos()">💾 Guardar</button>
+    </div>
+  `);
+}
+
+function saveConfigPuntos(){
+  const dolarPorPunto = parseFloat(document.getElementById('cfgDolar').value)||2;
+  const metaPuntos = parseInt(document.getElementById('cfgMeta').value)||100;
+  const premio = document.getElementById('cfgPremio').value.trim()||'Premio sorpresa';
+  DB.set('configPuntos',{dolarPorPunto,metaPuntos,premio});
+  closeModal();renderClientes();showToast('✅ Configuración de puntos guardada');
+}
+
+// Add points when sale is finalized
+function addPuntosCliente(sale){
+  if(!sale||!sale.clienteId) return;
+  const clientes = getClientes();
+  const c = clientes.find(x=>x.id===sale.clienteId);
+  if(!c) return;
+  const config = getConfigPuntos();
+  const puntos = sale.total / (config.dolarPorPunto||2);
+  c.puntos = (c.puntos||0) + puntos;
+  c.totalCompras = (c.totalCompras||0) + sale.total;
+  c.numCompras = (c.numCompras||0) + 1;
+  if(!c.historial) c.historial=[];
+  c.historial.push({fecha:sale.date,tipo:'compra',puntos:puntos,motivo:'Compra $'+sale.total.toFixed(2)});
+  DB.set('clientes',clientes);
+  fbSave('clientes_pos', c.id, c);
+  // Alert if reached goal
+  const meta = config.metaPuntos||100;
+  if(c.puntos >= meta && (c.puntos - puntos) < meta){
+    setTimeout(()=>{
+      showToast('🎁 ¡'+c.nombre+' llegó a '+meta+' puntos! Puede canjear su premio 🎉');
+    }, 1500);
+  }
+}
+
+// ============================================================
+// CARTERA DE CLIENTES + PUNTOS
+// ============================================================
+function openPuntosConfig(){
+  const cfg = getPuntosConfig();
+  openModalContent(`
+    <h3>⚙️ Configurar Sistema de Puntos</h3>
+    <div style="background:#F3E5F5;border-radius:12px;padding:12px;margin-bottom:14px;font-size:12px;color:#7B1FA2;font-weight:700">
+      💡 Ejemplo: Si pones $2 = 1 punto y meta 50 puntos, el cliente necesita comprar $100 para ganar el premio
+    </div>
+    <div class="form-group">
+      <label>💵 Cada cuántos dólares se gana 1 punto</label>
+      <input id="cfgDolar" type="number" step="0.5" min="0.5" value="${cfg.dolarPorPunto}" placeholder="Ej: 1">
+    </div>
+    <div class="form-group">
+      <label>🎯 Puntos necesarios para el premio</label>
+      <input id="cfgMeta" type="number" min="1" value="${cfg.metaPuntos}" placeholder="Ej: 100">
+    </div>
+    <div class="form-group">
+      <label>🎁 Premio a entregar</label>
+      <input id="cfgPremio" value="${cfg.premio}" placeholder="Ej: Producto gratis a elegir">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="savePuntosConfig()">💾 Guardar</button>
+    </div>
+  `);
+}
+
+function savePuntosConfig(){
+  const dolarPorPunto = parseFloat(document.getElementById('cfgDolar').value)||1;
+  const metaPuntos = parseInt(document.getElementById('cfgMeta').value)||100;
+  const premio = document.getElementById('cfgPremio').value.trim()||'Producto gratis';
+  DB.set('puntosConfig', {dolarPorPunto, metaPuntos, premio});
+  closeModal();
+  showToast('✅ Configuración guardada');
+  renderClientes();
+}
+
+function openClienteModal(id){
+  const clientes = getClientes();
+  const c = id ? clientes.find(x=>x.id===id) : {id:null,nombre:'',telefono:'',cedula:'',puntos:0,totalCompras:0,visitas:0};
+  openModalContent(`
+    <h3>${id?'✏️ Editar Cliente':'➕ Nuevo Cliente'}</h3>
+    <div class="form-group"><label>👤 Nombre completo</label><input id="cNombre" value="${c.nombre}" placeholder="Ej: Ana Torres" autofocus></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-group"><label>📱 Teléfono</label><input id="cTelefono" value="${c.telefono||''}" placeholder="0991234567" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'')"></div>
+      <div class="form-group"><label>🪪 Cédula / RUC</label><input id="cCedula" value="${c.cedula||''}" placeholder="1712345678" maxlength="13" oninput="this.value=this.value.replace(/[^0-9]/g,'')"></div>
+    </div>
+    ${id?`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-group"><label>⭐ Puntos actuales</label><input id="cPuntos" type="number" value="${c.puntos||0}" min="0"></div>
+      <div class="form-group"><label>🛒 Total compras ($)</label><input id="cCompras" type="number" value="${c.totalCompras||0}" min="0" step="0.01"></div>
+    </div>`:''}
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="saveCliente(${id||'null'})">💾 Guardar</button>
+    </div>
+  `);
+}
+
+function saveCliente(id){
+  const nombre = document.getElementById('cNombre').value.trim();
+  const telefono = document.getElementById('cTelefono').value.trim();
+  const cedula = document.getElementById('cCedula').value.trim();
+  if(!nombre){showToast('⚠️ Ingresa el nombre');return;}
+  const clientes = getClientes();
+  if(id){
+    const c = clientes.find(x=>x.id===id);
+    c.nombre=nombre; c.telefono=telefono; c.cedula=cedula;
+    c.puntos=parseFloat(document.getElementById('cPuntos').value)||0;
+    c.totalCompras=parseFloat(document.getElementById('cCompras').value)||0;
+  } else {
+    clientes.push({id:Date.now(),nombre,telefono,cedula,puntos:0,totalCompras:0,visitas:0,fechaRegistro:new Date().toISOString().split('T')[0]});
+  }
+  DB.set('clientes', clientes);
+  fbSave('clientes_db', 'all', clientes);
+  closeModal();
+  renderClientes();
+  showToast('✅ Cliente guardado');
+}
+
+function deleteCliente(id){
+  if(!confirm('¿Eliminar cliente?')) return;
+  DB.set('clientes', getClientes().filter(c=>c.id!==id));
+  renderClientes();
+  showToast('🗑️ Cliente eliminado');
+}
+
+function canjearPremio(id){
+  const cfg = getPuntosConfig();
+  const clientes = getClientes();
+  const c = clientes.find(x=>x.id===id);
+  if(!c) return;
+  openModalContent(`
+    <h3>🎁 Canjear Premio</h3>
+    <div style="background:#F3E5F5;border-radius:12px;padding:14px;text-align:center;margin-bottom:16px">
+      <div style="font-size:36px;margin-bottom:8px">🎁</div>
+      <div style="font-size:16px;font-weight:800;color:#7B1FA2">${cfg.premio}</div>
+      <div style="font-size:13px;color:#888;margin-top:4px">Cliente: ${c.nombre}</div>
+      <div style="font-size:13px;color:#7B1FA2;font-weight:700;margin-top:4px">⭐ ${c.puntos} puntos</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button style="flex:1;padding:13px;border-radius:12px;background:#7B1FA2;color:white;border:none;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif" onclick="confirmarCanje(${id})">🎁 Confirmar Canje</button>
+    </div>
+  `);
+}
+
+function confirmarCanje(id){
+  const cfg = getPuntosConfig();
+  const clientes = getClientes();
+  const c = clientes.find(x=>x.id===id);
+  c.puntos = c.puntos - cfg.metaPuntos;
+  if(c.puntos < 0) c.puntos = 0;
+  c.ultimoCanje = new Date().toISOString().split('T')[0];
+  DB.set('clientes', clientes);
+  fbSave('clientes_db', 'all', clientes);
+  closeModal();
+  renderClientes();
+  showToast('🎁 Premio canjeado para '+c.nombre);
+}
+
+function sumarPuntosCliente(clienteId, totalVenta){
+  const cfg = getPuntosConfig();
+  const clientes = getClientes();
+  const c = clientes.find(x=>x.id===clienteId);
+  if(!c) return;
+  const puntosGanados = totalVenta / cfg.dolarPorPunto;
+  c.puntos = (c.puntos||0) + puntosGanados;
+  c.totalCompras = (c.totalCompras||0) + totalVenta;
+  c.visitas = (c.visitas||0) + 1;
+  c.ultimaCompra = new Date().toISOString().split('T')[0];
+  DB.set('clientes', clientes);
+  fbSave('clientes_db', 'all', clientes);
+  // Alert if reached goal
+  if(c.puntos >= cfg.metaPuntos){
+    showToast('🎉 ¡'+c.nombre+' llegó a '+Math.floor(c.puntos)+' puntos! Premio disponible 🎁');
+  }
+  return puntosGanados;
+}
+
+function renderClientes(){
+  const cfg = getPuntosConfig();
+  let clientes = getClientes();
+  const buscar = (document.getElementById('clienteBuscar')?.value||'').toLowerCase().trim();
+  const orden = document.getElementById('clienteOrden')?.value||'puntos';
+
+  // Search filter
+  if(buscar){
+    clientes = clientes.filter(c=>
+      c.nombre.toLowerCase().includes(buscar)||
+      (c.cedula||'').includes(buscar)||
+      (c.telefono||'').includes(buscar)
+    );
+  }
+
+  // Filter prize ready
+  if(orden==='premio') clientes = clientes.filter(c=>(c.puntos||0)>=cfg.metaPuntos);
+
+  // Sort
+  if(orden==='puntos'||orden==='premio') clientes.sort((a,b)=>(b.puntos||0)-(a.puntos||0));
+  else if(orden==='compras') clientes.sort((a,b)=>(b.totalCompras||0)-(a.totalCompras||0));
+  else clientes.sort((a,b)=>a.nombre.localeCompare(b.nombre));
+
+  const total = getClientes().length;
+  const conPremio = getClientes().filter(c=>(c.puntos||0)>=cfg.metaPuntos).length;
+  const totalCompras = getClientes().reduce((s,c)=>s+(c.totalCompras||0),0);
+
+  // KPIs
+  const kpiEl = document.getElementById('clientesKpis');
+  if(kpiEl) kpiEl.innerHTML=`
+    <div class="kpi-card accent"><div class="kpi-label">👥 Total clientes</div><div class="kpi-val">${total}</div><div class="kpi-sub">registrados</div></div>
+    <div class="kpi-card"><div class="kpi-label">🎁 Con premio</div><div class="kpi-val" style="color:#7B1FA2">${conPremio}</div><div class="kpi-sub">listos para canjear</div></div>
+    <div class="kpi-card"><div class="kpi-label">💰 Total compras</div><div class="kpi-val">$${totalCompras.toFixed(2)}</div><div class="kpi-sub">acumulado</div></div>
+    <div class="kpi-card"><div class="kpi-label">⭐ Meta puntos</div><div class="kpi-val" style="color:#7B1FA2">${cfg.metaPuntos}</div><div class="kpi-sub">$${cfg.dolarPorPunto} = 1 pto</div></div>
+  `;
+
+  const cont = document.getElementById('clientesList');
+  if(!cont) return;
+  if(!clientes.length){
+    cont.innerHTML='<div class="empty"><div class="ei">👥</div><p>'+( buscar?'Sin resultados':'Sin clientes registrados')+'</p></div>';
+    return;
+  }
+
+  cont.innerHTML = clientes.map((c,idx)=>{
+    const puntos = c.puntos||0;
+    const pct = Math.min(100, (puntos/cfg.metaPuntos)*100);
+    const listo = puntos >= cfg.metaPuntos;
+    return `
+    <div style="background:white;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:var(--shadow);border-left:4px solid ${listo?'#7B1FA2':'var(--border)'}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div>
+          <div style="font-size:15px;font-weight:800">${idx===0&&orden==='puntos'?'👑 ':''}${c.nombre}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">
+            ${c.telefono?`📱 ${c.telefono} `:''}${c.cedula?`· 🪪 ${c.cedula}`:''}
+          </div>
+          <div style="font-size:11px;color:var(--muted)">
+            🛒 ${c.visitas||0} visitas · 💰 $${(c.totalCompras||0).toFixed(2)} total
+            ${c.ultimaCompra?` · Última: ${c.ultimaCompra}`:''}
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:20px;font-weight:800;color:${listo?'#7B1FA2':'var(--g1)'}">⭐ ${puntos.toFixed(1)}</div>
+          <div style="font-size:10px;color:var(--muted)">de ${cfg.metaPuntos} pts</div>
+        </div>
+      </div>
+      <!-- Progress bar -->
+      <div style="background:#f0f0f0;border-radius:6px;height:8px;margin-bottom:8px;overflow:hidden">
+        <div style="width:${pct}%;height:100%;background:${listo?'#7B1FA2':'linear-gradient(90deg,var(--g1),var(--acc))'};border-radius:6px;transition:width .5s"></div>
+      </div>
+      ${listo?`<div style="background:#F3E5F5;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;color:#7B1FA2;margin-bottom:8px;text-align:center">🎁 ¡Premio disponible! — ${cfg.premio}</div>`:''}
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button onclick="openClienteModal(${c.id})" style="background:#E3F2FD;color:var(--info);border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer">✏️ Editar</button>
+        ${listo?`<button onclick="canjearPremio(${c.id})" style="background:#7B1FA2;color:white;border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer">🎁 Canjear</button>`:''}
+        <button onclick="deleteCliente(${c.id})" style="background:#FFEBEE;color:var(--danger);border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function exportClientesExcel(){
+  const clientes = getClientes();
+  const cfg = getPuntosConfig();
+  if(!clientes.length){ showToast('⚠️ Sin clientes'); return; }
+  const rows = clientes.map(c=>({
+    'Nombre': c.nombre,
+    'Teléfono': c.telefono||'',
+    'Cédula/RUC': c.cedula||'',
+    'Puntos': c.puntos||0,
+    'Meta puntos': cfg.metaPuntos,
+    'Premio disponible': (c.puntos||0)>=cfg.metaPuntos?'✅ SÍ':'❌ NO',
+    'Total compras ($)': (c.totalCompras||0).toFixed(2),
+    'Visitas': c.visitas||0,
+    'Última compra': c.ultimaCompra||'',
+    'Fecha registro': c.fechaRegistro||'',
+  }));
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols']=[{wch:20},{wch:14},{wch:14},{wch:10},{wch:12},{wch:18},{wch:16},{wch:10},{wch:14},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
+  XLSX.writeFile(wb, 'TENTEN_Clientes_'+new Date().toISOString().split('T')[0]+'.xlsx');
+  showToast('✅ Excel descargado');
+}
+
+function toggleAfiliarTicket(){
+  const chk = document.getElementById('chkAfiliarTicket');
+  const panel = document.getElementById('afiliarTicketPanel');
+  if(!panel) return;
+  panel.style.display = chk.checked ? 'block' : 'none';
+  if(chk.checked){
+    setTimeout(()=>{
+      const inp = document.getElementById('clienteTicketSearch');
+      if(inp) inp.focus();
+      buscarClienteTicket();
+    }, 100);
+  } else {
+    pendingClienteId = null;
+    const sel = document.getElementById('clienteSeleccionado');
+    if(sel) sel.style.display = 'none';
+  }
+}
+
+function buscarClienteTicket(){
+  const q = (document.getElementById('clienteTicketSearch')?.value||'').toLowerCase().trim();
+  const clientes = getClientes().filter(c=>
+    !q ||
+    c.nombre.toLowerCase().includes(q) ||
+    (c.cedula||'').includes(q) ||
+    (c.telefono||'').includes(q)
+  ).slice(0,5);
+  const list = document.getElementById('clienteTicketList');
+  if(!list) return;
+  if(!clientes.length && q){
+    // Show option to register new
+    list.innerHTML = `
+      <div style="color:#888;font-size:11px;padding:4px 0;margin-bottom:6px">Sin resultados — ¿Registrar nuevo?</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <input id="nuevoNombreTicket" placeholder="Nombre" style="padding:6px 8px;border:1px solid #CE93D8;border-radius:6px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
+        <input id="nuevoTelefonoTicket" placeholder="Teléfono" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="padding:6px 8px;border:1px solid #CE93D8;border-radius:6px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
+      </div>
+      <button onclick="registrarClienteTicket()" style="width:100%;margin-top:6px;background:#7B1FA2;color:white;border:none;border-radius:6px;padding:7px;font-size:12px;font-weight:700;cursor:pointer">⭐ Registrar y afiliar</button>`;
+  } else {
+    list.innerHTML = clientes.map(c=>`
+      <div onclick="seleccionarClienteTicket(${c.id},'${c.nombre.replace(/'/g,"\'")}'')" 
+        style="padding:7px 8px;border:1px solid #CE93D8;border-radius:8px;margin-bottom:4px;cursor:pointer;display:flex;justify-content:space-between;background:white"
+        onmouseover="this.style.background='#EDE7F6'" onmouseout="this.style.background='white'">
+        <div>
+          <div style="font-weight:700">${c.nombre}</div>
+          <div style="font-size:10px;color:#888">${c.telefono||''} ${c.cedula?'· '+c.cedula:''}</div>
+        </div>
+        <div style="font-weight:800;color:#7B1FA2">⭐${(c.puntos||0).toFixed(0)}</div>
+      </div>`).join('') || '<div style="color:#888;font-size:11px;padding:4px">Escribe para buscar...</div>';
+  }
+}
+
+function seleccionarClienteTicket(id, nombre){
+  pendingClienteId = id;
+  const sel = document.getElementById('clienteSeleccionado');
+  const nomEl = document.getElementById('clienteSelNombre');
+  const list = document.getElementById('clienteTicketList');
+  const inp = document.getElementById('clienteTicketSearch');
+  if(sel){ sel.style.display='flex'; }
+  if(nomEl) nomEl.textContent = '✅ '+nombre;
+  if(list) list.innerHTML = '';
+  if(inp) inp.value = '';
+  showToast('✅ Cliente: '+nombre);
+}
+
+function deseleccionarClienteTicket(){
+  pendingClienteId = null;
+  const sel = document.getElementById('clienteSeleccionado');
+  if(sel) sel.style.display = 'none';
+  buscarClienteTicket();
+}
+
+function registrarClienteTicket(){
+  const nombre = document.getElementById('nuevoNombreTicket')?.value.trim();
+  const telefono = document.getElementById('nuevoTelefonoTicket')?.value.trim()||'';
+  if(!nombre){ showToast('⚠️ Ingresa el nombre'); return; }
+  const clientes = getClientes();
+  const nuevo = {
+    id: Date.now(), nombre, telefono, cedula:'',
+    puntos:0, totalCompras:0, visitas:0,
+    fechaRegistro: new Date().toISOString().split('T')[0]
+  };
+  clientes.push(nuevo);
+  DB.set('clientes', clientes);
+  fbSave('clientes_db','all',clientes);
+  seleccionarClienteTicket(nuevo.id, nombre);
+  showToast('⭐ '+nombre+' registrado y afiliado');
+}
+
+function toggleAfiliarCambio(){
+  const chk = document.getElementById('chkAfiliarCambio');
+  const panel = document.getElementById('afiliarCambioPanel');
+  if(panel) panel.style.display = chk.checked ? 'block' : 'none';
+  if(chk.checked){
+    setTimeout(()=>{
+      document.getElementById('clienteCambioSearch')?.focus();
+      buscarClienteCambio();
+    },100);
+  } else {
+    pendingClienteId = null;
+  }
+}
+
+function buscarClienteCambio(){
+  const q = (document.getElementById('clienteCambioSearch')?.value||'').toLowerCase().trim();
+  const clientes = getClientes().filter(c=>
+    !q ||
+    c.nombre.toLowerCase().includes(q)||
+    (c.cedula||'').includes(q)||
+    (c.telefono||'').includes(q)
+  ).slice(0,4);
+  const list = document.getElementById('clienteCambioList');
+  const nuevoDiv = document.getElementById('registrarNuevoCambio');
+  if(!list) return;
+  if(!clientes.length && q){
+    list.innerHTML = '<div style="font-size:11px;color:#888;padding:4px">Sin resultados</div>';
+    if(nuevoDiv) nuevoDiv.style.display = 'block';
+  } else {
+    if(nuevoDiv) nuevoDiv.style.display = 'none';
+    list.innerHTML = clientes.map(c=>`
+      <div onclick="seleccionarClienteCambio(${c.id},'${c.nombre.replace(/'/g,"\'")}'')"
+        style="padding:8px 10px;border:1px solid #CE93D8;border-radius:8px;margin-bottom:4px;cursor:pointer;display:flex;justify-content:space-between;background:white"
+        onmouseover="this.style.background='#EDE7F6'" onmouseout="this.style.background='white'">
+        <div>
+          <div style="font-weight:700;font-size:13px">${c.nombre}</div>
+          <div style="font-size:10px;color:#888">${c.telefono||''} ${c.cedula?'· '+c.cedula:''}</div>
+        </div>
+        <div style="font-weight:800;color:#7B1FA2;font-size:12px">⭐${(c.puntos||0).toFixed(0)}</div>
+      </div>`).join('') || '<div style="font-size:11px;color:#888;padding:4px">Escribe para buscar...</div>';
+  }
+}
+
+function seleccionarClienteCambio(id, nombre){
+  pendingClienteId = id;
+  const sel = document.getElementById('clienteCambioSeleccionado');
+  const nomEl = document.getElementById('clienteCambioNombre');
+  const list = document.getElementById('clienteCambioList');
+  const inp = document.getElementById('clienteCambioSearch');
+  const nuevo = document.getElementById('registrarNuevoCambio');
+  if(sel) sel.style.display = 'flex';
+  if(nomEl) nomEl.textContent = '✅ '+nombre;
+  if(list) list.innerHTML = '';
+  if(inp) inp.value = '';
+  if(nuevo) nuevo.style.display = 'none';
+  showToast('✅ Cliente: '+nombre);
+}
+
+function deseleccionarClienteCambio(){
+  pendingClienteId = null;
+  const sel = document.getElementById('clienteCambioSeleccionado');
+  if(sel) sel.style.display = 'none';
+  buscarClienteCambio();
+}
+
+function registrarClienteCambio(){
+  const nombre = document.getElementById('nuevoNombreCambio')?.value.trim();
+  const telefono = document.getElementById('nuevoTelefonoCambio')?.value.trim()||'';
+  const cedula = document.getElementById('nuevoCedulaCambio')?.value.trim()||'';
+  if(!nombre){ showToast('⚠️ Ingresa el nombre'); return; }
+  const clientes = getClientes();
+  const nuevo = {
+    id:Date.now(), nombre, telefono, cedula,
+    puntos:0, totalCompras:0, visitas:0,
+    fechaRegistro:new Date().toISOString().split('T')[0]
+  };
+  clientes.push(nuevo);
+  DB.set('clientes', clientes);
+  fbSave('clientes_db','all',clientes);
+  seleccionarClienteCambio(nuevo.id, nombre);
+  showToast('⭐ '+nombre+' registrado y afiliado');
+}
+
+// ============================================================
+// DEVOLUCIONES
+// ============================================================
+function abrirDevolucion(sale){
+  // Build items list with checkboxes
+  const itemsHTML = sale.items.map((item, idx) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px;border:2px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer"
+      onclick="toggleItemDevolucion(${idx})" id="devItem_${idx}">
+      <input type="checkbox" id="chkDev_${idx}" style="width:22px;height:22px;accent-color:#1565C0;flex-shrink:0;cursor:pointer" onclick="event.stopPropagation()" onchange="calcTotalDevolucion()">
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700">${item.emoji} ${item.name}</div>
+        <div style="font-size:11px;color:var(--muted)">${item.qty} unidad${item.qty>1?'es':''} × $${item.price.toFixed(2)}</div>
+      </div>
+      <div style="font-size:14px;font-weight:800;color:#1565C0;font-family:'DM Mono',monospace">$${item.subtotal.toFixed(2)}</div>
+    </div>`).join('');
+
+  openModalContent(`
+    <h3>🔄 Devolución de Productos</h3>
+    <div style="background:#E3F2FD;border-radius:12px;padding:10px 14px;margin-bottom:14px">
+      <div style="font-size:11px;color:#1565C0;font-weight:700">Venta original: $${sale.total.toFixed(2)} — ${sale.date} ${sale.time}</div>
+    </div>
+    <div style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Selecciona productos a devolver:</div>
+    <div style="margin-bottom:4px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:10px">
+        <input type="checkbox" id="chkDevTodo" onchange="seleccionarTodosDevolucion(${sale.items.length})" style="width:18px;height:18px;accent-color:#1565C0">
+        <span style="font-size:13px;font-weight:700;color:#1565C0">Seleccionar todo (devolución total)</span>
+      </label>
+    </div>
+    ${itemsHTML}
+    <div style="background:#E8F5E9;border-radius:10px;padding:10px 14px;margin-top:10px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:13px;font-weight:700">Total a devolver:</span>
+      <span id="totalDevolucion" style="font-size:20px;font-weight:800;color:#2E7D32;font-family:'DM Mono',monospace">$0.00</span>
+    </div>
+    <div class="form-group" style="margin-top:12px">
+      <label>Motivo de devolución</label>
+      <input id="motivoDevolucion" placeholder="Ej: Producto en mal estado, error en cobro..." autofocus>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button style="flex:1;padding:13px;border-radius:12px;background:#1565C0;color:white;border:none;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif" 
+        onclick='confirmarDevolucion(${JSON.stringify(sale)})'>🔄 Confirmar Devolución</button>
+    </div>
+  `);
+  // Store sale data
+  window._devSale = sale;
+}
+
+function toggleItemDevolucion(idx){
+  const chk = document.getElementById('chkDev_'+idx);
+  if(chk){ chk.checked = !chk.checked; }
+  calcTotalDevolucion();
+}
+
+function seleccionarTodosDevolucion(count){
+  const todo = document.getElementById('chkDevTodo')?.checked;
+  for(let i=0; i<count; i++){
+    const chk = document.getElementById('chkDev_'+i);
+    if(chk) chk.checked = todo;
+  }
+  calcTotalDevolucion();
+}
+
+function calcTotalDevolucion(){
+  const sale = window._devSale;
+  if(!sale) return;
+  let total = 0;
+  sale.items.forEach((item, idx)=>{
+    const chk = document.getElementById('chkDev_'+idx);
+    if(chk?.checked) total += item.subtotal;
+    // Highlight selected items
+    const div = document.getElementById('devItem_'+idx);
+    if(div) div.style.borderColor = chk?.checked ? '#1565C0' : 'var(--border)';
+    if(div) div.style.background = chk?.checked ? '#E3F2FD' : 'white';
+  });
+  const el = document.getElementById('totalDevolucion');
+  if(el) el.textContent = '$'+total.toFixed(2);
+}
+
+async function confirmarDevolucion(sale){
+  const motivo = document.getElementById('motivoDevolucion')?.value.trim() || 'Sin motivo';
+  const itemsDevueltos = [];
+  sale.items.forEach((item, idx)=>{
+    const chk = document.getElementById('chkDev_'+idx);
+    if(chk?.checked) itemsDevueltos.push(item);
+  });
+  if(!itemsDevueltos.length){
+    showToast('⚠️ Selecciona al menos un producto');
+    return;
+  }
+  const totalDevuelto = itemsDevueltos.reduce((s,i)=>s+i.subtotal, 0);
+  const esTotal = itemsDevueltos.length === sale.items.length;
+
+  // Update sale as returned
+  const sales = getSales();
+  const saleRef = sales.find(s=>s.id===sale.id);
+  if(saleRef){
+    saleRef.devuelta = true;
+    saleRef.devueltaParcial = !esTotal;
+    saleRef.devueltaMotivo = motivo;
+    saleRef.devueltaFecha = new Date().toISOString().split('T')[0];
+    saleRef.devueltaItems = itemsDevueltos;
+    saleRef.devueltaTotal = totalDevuelto;
+  }
+
+  // Restore stock
+  const prods = getProducts();
+  itemsDevueltos.forEach(di=>{
+    const p = prods.find(x=>x.id===di.id);
+    if(p && p.stock >= 0) p.stock += di.qty;
+  });
+
+  DB.set('sales', sales);
+  DB.set('products', prods);
+  await fbSave('sales', sale.id, saleRef);
+  prods.forEach(p=>fbSave('products', p.id, p));
+
+  closeModal();
+  renderHistorial();
+  renderProducts();
+  checkStockAlerts();
+
+  // Show devolución receipt
+  showDevolucionReceipt(sale, itemsDevueltos, totalDevuelto, motivo, esTotal);
+  showToast('🔄 Devolución registrada — $'+totalDevuelto.toFixed(2)+' a reembolsar');
+}
+
+function showDevolucionReceipt(sale, itemsDevueltos, totalDevuelto, motivo, esTotal){
+  const fecha = new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const hora = new Date().toLocaleTimeString('es-EC',{hour:'2-digit',minute:'2-digit'});
+
+  document.getElementById('receiptContent').innerHTML=`
+    <div class="receipt-store-name">TENTEN MICROMERCADO</div>
+    <div class="receipt-tagline" style="color:#1565C0;font-weight:700">🔄 COMPROBANTE DE DEVOLUCIÓN</div>
+    <hr class="receipt-divider">
+    <div class="receipt-meta">
+      <div>Fecha: ${fecha} ${hora}</div>
+      <div>Ref. venta original: #${String(sale.id).slice(-6)}</div>
+      <div>Tipo: ${esTotal?'Devolución total':'Devolución parcial'}</div>
+      <div>Motivo: ${motivo}</div>
+      ${sale.clienteNombre?`<div>Cliente: ${sale.clienteNombre}</div>`:''}
+    </div>
+    <hr class="receipt-divider">
+    <div class="receipt-col-hdr">
+      <span style="flex:1">Producto devuelto</span>
+      <span style="width:30px;text-align:center">Cant</span>
+      <span style="width:58px;text-align:right">Total</span>
+    </div>
+    ${itemsDevueltos.map(i=>`
+      <div class="receipt-item">
+        <span class="ri-name">${i.name}</span>
+        <span class="ri-qty">${i.qty}</span>
+        <span class="ri-sub">$${i.subtotal.toFixed(2)}</span>
+      </div>`).join('')}
+    <div class="receipt-total-row">
+      <span class="receipt-total-label" style="color:#1565C0">💵 A REEMBOLSAR</span>
+      <span class="receipt-total-val" style="color:#1565C0">$${totalDevuelto.toFixed(2)}</span>
+    </div>
+    <div style="margin-top:16px;border-top:1px solid #333;padding-top:4px;text-align:center;font-size:8px;color:#555">
+      <div style="margin-bottom:20px">Firma del cliente</div>
+      <div>──────────────</div>
+      <div style="font-size:8px;margin-top:3px">Devolución $${totalDevuelto.toFixed(2)}</div>
+      <div style="font-size:8px">Fecha: ${fecha}</div>
+    </div>
+    <div class="receipt-footer-txt">TENTEN MICROMERCADO<br>Devolución procesada ✅</div>
+  `;
+  document.getElementById('receiptOverlay').classList.add('show');
+}
+
+function renderAll(){renderCategories();renderProducts();updateCartUI();}
+
+// ============================================================
+// RECUPERAR CONTRASEÑA
+// ============================================================
+function showRecoverModal(){
+  // Create overlay
+  const overlay = document.createElement('div');
+  overlay.id = 'recoverOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML = `
+    <div style="background:white;border-radius:24px;padding:28px 24px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+      <div style="font-size:36px;text-align:center;margin-bottom:8px">🔐</div>
+      <h3 style="font-size:20px;font-weight:800;text-align:center;color:var(--g1);margin-bottom:6px">Recuperar acceso</h3>
+      <p style="font-size:13px;color:#888;text-align:center;margin-bottom:20px">Elige cómo quieres recuperar tu contraseña</p>
+      
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+        <button onclick="showEmailRecover()" style="display:flex;align-items:center;gap:12px;padding:14px 16px;border:2px solid var(--border);border-radius:14px;background:white;cursor:pointer;font-size:14px;font-weight:700;font-family:'DM Sans',sans-serif">
+          <span style="font-size:24px">📧</span>
+          <div style="text-align:left">
+            <div>Recuperar por correo</div>
+            <div style="font-size:11px;color:#888;font-weight:400">Te enviamos un link a tu email</div>
+          </div>
+        </button>
+        <button onclick="showAdminRecover()" style="display:flex;align-items:center;gap:12px;padding:14px 16px;border:2px solid var(--border);border-radius:14px;background:white;cursor:pointer;font-size:14px;font-weight:700;font-family:'DM Sans',sans-serif">
+          <span style="font-size:24px">👑</span>
+          <div style="text-align:left">
+            <div>Soy el administrador</div>
+            <div style="font-size:11px;color:#888;font-weight:400">Restablecer con código de seguridad</div>
+          </div>
+        </button>
+      </div>
+
+      <button onclick="document.getElementById('recoverOverlay').remove()" style="width:100%;padding:11px;border-radius:12px;border:2px solid var(--border);background:white;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">Cancelar</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+function showEmailRecover(){
+  document.getElementById('recoverOverlay').remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'recoverOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML = `
+    <div style="background:white;border-radius:24px;padding:28px 24px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+      <div style="font-size:36px;text-align:center;margin-bottom:8px">📧</div>
+      <h3 style="font-size:20px;font-weight:800;text-align:center;color:var(--g1);margin-bottom:6px">Recuperar por correo</h3>
+      <p style="font-size:13px;color:#888;text-align:center;margin-bottom:20px">Ingresa el correo del administrador y te enviamos un link para restablecer</p>
+      <div style="margin-bottom:14px">
+        <label style="display:block;font-size:12px;font-weight:700;text-transform:uppercase;color:#888;margin-bottom:6px">Correo electrónico</label>
+        <input id="recoverEmail" type="email" placeholder="tucorreo@gmail.com" style="width:100%;padding:13px 16px;border:2px solid var(--border);border-radius:12px;font-size:15px;font-family:'DM Sans',sans-serif;outline:none">
+      </div>
+      <div id="recoverMsg" style="display:none;padding:10px;border-radius:10px;font-size:13px;font-weight:700;margin-bottom:12px"></div>
+      <div style="display:flex;gap:8px">
+        <button onclick="document.getElementById('recoverOverlay').remove()" style="flex:1;padding:13px;border-radius:12px;border:2px solid var(--border);background:white;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">← Volver</button>
+        <button onclick="sendRecoverEmail()" style="flex:1;padding:13px;border-radius:12px;border:none;background:var(--g1);color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">Enviar link</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById('recoverEmail').focus();
+}
+
+async function sendRecoverEmail(){
+  const email = document.getElementById('recoverEmail').value.trim();
+  const msg = document.getElementById('recoverMsg');
+  if(!email){ 
+    msg.style.display='block';
+    msg.style.background='#FFEBEE';msg.style.color='var(--danger)';
+    msg.textContent='⚠️ Ingresa tu correo electrónico';
+    return; 
+  }
+  msg.style.display='block';
+  msg.style.background='#E3F2FD';msg.style.color='#1565C0';
+  msg.textContent='⏳ Enviando...';
+  try {
+    if(window.fbAuth){
+      await fbAuth.sendPasswordResetEmail(email, {
+        url: 'https://tentemicromercado.netlify.app',
+        handleCodeInApp: false
+      });
+      msg.style.background='#E8F5E9';msg.style.color='#2E7D32';
+      msg.textContent='✅ ¡Enviado! Revisa tu correo '+email+' y sigue el link para restablecer tu contraseña';
+    } else {
+      throw new Error('Auth no disponible');
+    }
+  } catch(e){
+    console.log('Recovery error:', e);
+    msg.style.background='#FFEBEE';msg.style.color='var(--danger)';
+    if(e.code==='auth/user-not-found'){
+      msg.textContent='❌ Correo no registrado en Firebase. Verifica que sea el correo correcto.';
+    } else if(e.code==='auth/invalid-email'){
+      msg.textContent='❌ El correo no es válido';
+    } else if(e.code==='auth/api-key-not-valid'){
+      msg.textContent='❌ Error de configuración. Contacta al administrador.';
+    } else {
+      msg.textContent='❌ Error: '+e.message;
+    }
+  }
+}
+
+function showAdminRecover(){
+  document.getElementById('recoverOverlay').remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'recoverOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML = `
+    <div style="background:white;border-radius:24px;padding:28px 24px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+      <div style="font-size:36px;text-align:center;margin-bottom:8px">👑</div>
+      <h3 style="font-size:20px;font-weight:800;text-align:center;color:var(--g1);margin-bottom:6px">Acceso de emergencia</h3>
+      <p style="font-size:13px;color:#888;text-align:center;margin-bottom:20px">Ingresa el código de seguridad para restablecer como administrador</p>
+      <div style="margin-bottom:14px">
+        <label style="display:block;font-size:12px;font-weight:700;text-transform:uppercase;color:#888;margin-bottom:6px">Código de seguridad</label>
+        <div style="position:relative">
+        <input id="adminCode" type="password" placeholder="••••••••" style="width:100%;padding:13px 44px 13px 16px;border:2px solid var(--border);border-radius:12px;font-size:15px;font-family:'DM Sans',sans-serif;outline:none">
+        <span onclick="togglePass('adminCode',this)" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:20px;user-select:none">👁️</span>
+      </div>
+      </div>
+      <div id="adminCodeMsg" style="display:none;padding:10px;border-radius:10px;font-size:13px;font-weight:700;margin-bottom:12px"></div>
+      <div style="background:#FFF3E0;border-radius:10px;padding:10px;font-size:12px;color:#E65100;margin-bottom:14px">
+        💡 El código de seguridad es: <b>TENTEN2024</b> — guárdalo en un lugar seguro
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="document.getElementById('recoverOverlay').remove()" style="flex:1;padding:13px;border-radius:12px;border:2px solid var(--border);background:white;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">← Volver</button>
+        <button onclick="verifyAdminCode()" style="flex:1;padding:13px;border-radius:12px;border:none;background:var(--g1);color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">Verificar</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById('adminCode').focus();
+}
+
+function verifyAdminCode(){
+  const code = document.getElementById('adminCode').value.trim();
+  const msg = document.getElementById('adminCodeMsg');
+  if(code === 'TENTEN2024'){
+    // Reset admin password to default
+    const users = DB.get('users') || [];
+    const admin = users.find(u=>u.role==='admin');
+    if(admin){
+      admin.password = 'admin123';
+      DB.set('users', users);
+      fbSave('users', admin.id, admin);
+    }
+    msg.style.display='block';
+    msg.style.background='#E8F5E9';msg.style.color='#2E7D32';
+    msg.textContent='✅ Contraseña restablecida a: admin123 — ¡Entra y cámbiala!';
+    setTimeout(()=>{ document.getElementById('recoverOverlay').remove(); }, 3000);
+  } else {
+    msg.style.display='block';
+    msg.style.background='#FFEBEE';msg.style.color='var(--danger)';
+    msg.textContent='❌ Código incorrecto';
+  }
+}
+</script>
+<script>
+// Register Service Worker for PWA
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js')
+      .then(reg=>console.log('✅ PWA Service Worker registrado'))
+      .catch(err=>console.log('SW error:',err));
+  });
+}
+// PWA Install prompt
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault();
+  deferredPrompt = e;
+  // Show install button
+  const btn = document.getElementById('installBtn');
+  if(btn) btn.style.display = 'flex';
+});
+window.addEventListener('appinstalled', ()=>{
+  showToast('✅ App instalada correctamente');
+  const btn = document.getElementById('installBtn');
+  if(btn) btn.style.display = 'none';
+});
+function installPWA(){
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(choice=>{
+      if(choice.outcome==='accepted') showToast('🎉 ¡Instalando TENTEN POS!');
+      deferredPrompt = null;
+    });
+  } else {
+    // iOS instructions
+    openModalContent(`
+      <h3>📱 Instalar en iPhone/iPad</h3>
+      <div style="font-size:14px;line-height:2;color:#555">
+        <div>1. Toca el botón <b>compartir</b> 📤 en Safari</div>
+        <div>2. Baja y toca <b>"Agregar a pantalla de inicio"</b></div>
+        <div>3. Toca <b>"Agregar"</b></div>
+        <div style="margin-top:12px;background:#E8F5EE;padding:10px;border-radius:10px;color:var(--g1);font-weight:700">
+          ✅ ¡La app aparecerá en tu pantalla de inicio!
+        </div>
+      </div>
+      <div class="modal-actions"><button class="btn-confirm" onclick="closeModal()">Entendido</button></div>
+    `);
+  }
+}
+</script>
+</body>
+</html>
